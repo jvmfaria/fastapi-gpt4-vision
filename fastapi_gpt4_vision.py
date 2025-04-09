@@ -1,10 +1,10 @@
 from fastapi import FastAPI, UploadFile, File
 import openai
 import base64
-from io import BytesIO
-from PIL import Image
 import os
 from dotenv import load_dotenv
+from PIL import Image
+import io
 
 # Carregar variáveis de ambiente
 load_dotenv()
@@ -15,18 +15,19 @@ app = FastAPI()
 # Definir chave da OpenAI a partir das variáveis de ambiente
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-# Função para codificar imagem em base64 com redimensionamento
+# Função para codificar imagem em base64
 def encode_image(file: UploadFile) -> str:
+    # Abrir a imagem utilizando PIL e transformar para o formato correto
     image_data = file.file.read()
-    # Usar o Pillow para carregar a imagem
-    image = Image.open(BytesIO(image_data))
-    image.thumbnail((800, 800))  # Ajuste o tamanho máximo desejado (800x800 por exemplo)
+    image = Image.open(io.BytesIO(image_data))
 
-    # Convertendo a imagem para JPEG e codificando para base64
-    buffered = BytesIO()
-    image.save(buffered, format="JPEG")
-    image_base64 = base64.b64encode(buffered.getvalue()).decode("utf-8")
-    
+    # Aqui, podemos realizar qualquer manipulação de imagem, se necessário
+    # Exemplo: redimensionar a imagem
+    image = image.convert("RGB")  # Garantir que a imagem esteja no formato RGB
+    image_data = io.BytesIO()
+    image.save(image_data, format="JPEG")
+    image_base64 = base64.b64encode(image_data.getvalue()).decode("utf-8")
+
     return image_base64
 
 # Endpoint de classificação de imagem
@@ -42,22 +43,23 @@ async def classificar(imagem: UploadFile = File(...)):
         "levando em consideração as características faciais específicas que indicam esse tipo de caráter."
     )
 
-    # Envio da imagem para o GPT-4 Vision com o prompt
-    response = openai.chat_completions.create(
-        model="gpt-4",  # Usar o modelo GPT-4 Vision, como você mencionou
-        messages=[
-            {"role": "system", "content": prompt},
-            {
-                "role": "user",
-                "content": f"data:image/jpeg;base64,{image_base64}"
-            }
-        ],
-        max_tokens=300  # Ajuste o número de tokens conforme necessário
-    )
-
-    # Obter a resposta do modelo
     try:
+        # Envio da imagem para o GPT-4 Vision com o prompt
+        response = openai.ChatCompletion.create(
+            model="gpt-4",  # Usar o modelo GPT-4 Vision
+            messages=[
+                {"role": "system", "content": prompt},
+                {
+                    "role": "user",
+                    "content": f"data:image/jpeg;base64,{image_base64}"
+                }
+            ],
+            max_tokens=300
+        )
+
+        # Obter a resposta do modelo
         resposta = response.choices[0].message.content
         return {"tipo_carater": resposta}
-    except KeyError:
-        return {"error": "Erro ao processar a imagem. Certifique-se de que o modelo foi configurado corretamente."}
+
+    except Exception as e:
+        return {"error": str(e)}
