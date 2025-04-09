@@ -65,6 +65,7 @@ async def classificar(imagem: UploadFile = File(...)):
         max_tokens=300
     )
 
-    # Obter a resposta do modelo
-    resposta = response.choices[0].message["content"]
+    # Obter a resposta do modelo (o campo correto é 'text', não 'message')
+    resposta = response['choices'][0]['message']['content']  # Corrigido aqui
+
     return {"tipo_carater": resposta}
