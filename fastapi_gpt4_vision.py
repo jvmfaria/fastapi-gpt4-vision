@@ -33,7 +33,7 @@ async def classificar(imagem: UploadFile = File(...)):
 
     # Envio da imagem para o GPT-4 Vision com o prompt
     response = openai.chat.completions.create(
-        model="gpt-4v",
+        model="gpt-4",
         messages=[
             {"role": "system", "content": prompt},
             {
