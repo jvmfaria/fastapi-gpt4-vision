@@ -2,16 +2,17 @@ from fastapi import FastAPI, UploadFile, File
 from fastapi.responses import JSONResponse
 import base64
 import os
+import json
 from dotenv import load_dotenv
 from openai import OpenAI
 
 # Carrega variáveis de ambiente
 load_dotenv()
 
-# Inicializa cliente OpenAI moderno
+# Inicializa cliente OpenAI
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# FastAPI app
+# Instância FastAPI
 app = FastAPI()
 
 # Converte imagem para data URL base64
@@ -26,9 +27,17 @@ async def classificar(imagem: UploadFile = File(...)):
         image_data_url = file_to_data_url(imagem)
 
         prompt = (
-            "Você é um analista reichiano experiente. Com base na imagem facial fornecida, identifique e classifique "
-            "o tipo de caráter da pessoa entre: oral, esquizóide, masoquista, psicopata ou rígido. Explique sua resposta "
-            "citando as características visíveis que fundamentam sua análise psicológica."
+            "Você é um analista reichiano experiente. Com base na imagem facial fornecida, analise e classifique os traços da pessoa nos tipos de caráter: "
+            "oral, esquizóide, masoquista, psicopata e rígido. Para cada tipo, atribua uma pontuação de 0 a 10 indicando o quanto aquele traço está presente na expressão facial. "
+            "Retorne os resultados exclusivamente no seguinte formato JSON:\n"
+            "{\n"
+            "  \"oral\": <pontuação>,\n"
+            "  \"esquizoide\": <pontuação>,\n"
+            "  \"masoquista\": <pontuação>,\n"
+            "  \"psicopata\": <pontuação>,\n"
+            "  \"rigido\": <pontuação>,\n"
+            "  \"explicacao\": \"<breve explicação do porquê de cada pontuação>\"\n"
+            "}\n"
         )
 
         response = client.chat.completions.create(
@@ -46,8 +55,16 @@ async def classificar(imagem: UploadFile = File(...)):
             max_tokens=800
         )
 
-        resposta = response.choices[0].message.content
-        return {"tipo_carater": resposta}
+        raw = response.choices[0].message.content
+
+        try:
+            resultado = json.loads(raw)
+            return resultado
+        except json.JSONDecodeError:
+            return {
+                "erro": "A resposta não está em formato JSON válido.",
+                "resposta_bruta": raw
+            }
 
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
