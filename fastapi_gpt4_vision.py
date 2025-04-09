@@ -57,7 +57,7 @@ async def classificar(imagem: UploadFile = File(...)):
 
     # Envio da imagem para o GPT-4V com o prompt
     response = openai.chat.completions.create(
-        model="gpt-4v",  # Usando o modelo correto GPT-4V
+        model="gpt-4",  # Usando o modelo correto GPT-4V
         messages=[
             {"role": "system", "content": prompt},
             {"role": "user", "content": f"data:image/jpeg;base64,{image_base64}"}
