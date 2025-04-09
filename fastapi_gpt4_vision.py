@@ -1,14 +1,17 @@
 from fastapi import FastAPI, UploadFile, File
 from fastapi.responses import JSONResponse
-import openai
 import base64
 import os
 from dotenv import load_dotenv
+from openai import OpenAI
 
-# Carrega variáveis de ambiente (.env)
+# Carrega variáveis de ambiente
 load_dotenv()
-openai.api_key = os.getenv("OPENAI_API_KEY")
 
+# Inicializa cliente OpenAI moderno
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+# FastAPI app
 app = FastAPI()
 
 # Converte imagem para data URL base64
@@ -20,18 +23,15 @@ def file_to_data_url(file: UploadFile) -> str:
 @app.post("/classificar")
 async def classificar(imagem: UploadFile = File(...)):
     try:
-        # Converte imagem para data URL
         image_data_url = file_to_data_url(imagem)
 
-        # Prompt especializado
         prompt = (
             "Você é um analista reichiano experiente. Com base na imagem facial fornecida, identifique e classifique "
             "o tipo de caráter da pessoa entre: oral, esquizóide, masoquista, psicopata ou rígido. Explique sua resposta "
             "citando as características visíveis que fundamentam sua análise psicológica."
         )
 
-        # Chamada à OpenAI com GPT-4 Turbo (com suporte a visão)
-        response = openai.chat.completions.create(
+        response = client.chat.completions.create(
             model="gpt-4-turbo",
             messages=[
                 {"role": "system", "content": prompt},
