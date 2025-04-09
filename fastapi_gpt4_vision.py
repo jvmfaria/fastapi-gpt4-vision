@@ -1,65 +1,53 @@
 from fastapi import FastAPI, UploadFile, File
+from fastapi.responses import JSONResponse
 import openai
 import base64
 import os
 from dotenv import load_dotenv
-from PIL import Image
-import io
 
-# Carregar variáveis de ambiente
+# Carrega variáveis de ambiente (.env)
 load_dotenv()
-
-# Instanciar o FastAPI
-app = FastAPI()
-
-# Definir chave da OpenAI a partir das variáveis de ambiente
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-# Função para codificar imagem em base64
-def encode_image(file: UploadFile) -> str:
-    # Abrir a imagem utilizando PIL e transformar para o formato correto
-    image_data = file.file.read()
-    image = Image.open(io.BytesIO(image_data))
+app = FastAPI()
 
-    # Aqui, podemos realizar qualquer manipulação de imagem, se necessário
-    # Exemplo: redimensionar a imagem
-    image = image.convert("RGB")  # Garantir que a imagem esteja no formato RGB
-    image_data = io.BytesIO()
-    image.save(image_data, format="JPEG")
-    image_base64 = base64.b64encode(image_data.getvalue()).decode("utf-8")
+# Converte imagem para data URL base64
+def file_to_data_url(file: UploadFile) -> str:
+    content = file.file.read()
+    encoded = base64.b64encode(content).decode("utf-8")
+    return f"data:{file.content_type};base64,{encoded}"
 
-    return image_base64
-
-# Endpoint de classificação de imagem
 @app.post("/classificar")
 async def classificar(imagem: UploadFile = File(...)):
-    image_base64 = encode_image(imagem)
-
-    # Prompt melhorado para o GPT-4 Vision
-    prompt = (
-        "Você é um especialista em análise psicológica reichiana com foco na classificação de tipos de caráter "
-        "a partir da expressão facial. Com base na imagem fornecida, classifique o tipo de caráter da pessoa entre: "
-        "oral, esquizóide, masoquista, psicopata ou rígido. Explique detalhadamente a razão de sua análise, "
-        "levando em consideração as características faciais específicas que indicam esse tipo de caráter."
-    )
-
     try:
-        # Envio da imagem para o GPT-4 Vision com o prompt
-        response = openai.ChatCompletion.create(
-            model="gpt-4",  # Usar o modelo GPT-4 Vision
+        # Converte imagem para data URL
+        image_data_url = file_to_data_url(imagem)
+
+        # Prompt especializado
+        prompt = (
+            "Você é um analista reichiano experiente. Com base na imagem facial fornecida, identifique e classifique "
+            "o tipo de caráter da pessoa entre: oral, esquizóide, masoquista, psicopata ou rígido. Explique sua resposta "
+            "citando as características visíveis que fundamentam sua análise psicológica."
+        )
+
+        # Chamada à OpenAI com GPT-4 Turbo (com suporte a visão)
+        response = openai.chat.completions.create(
+            model="gpt-4-turbo",
             messages=[
                 {"role": "system", "content": prompt},
                 {
                     "role": "user",
-                    "content": f"data:image/jpeg;base64,{image_base64}"
+                    "content": [
+                        {"type": "text", "text": "Analise a imagem abaixo:"},
+                        {"type": "image_url", "image_url": {"url": image_data_url}}
+                    ]
                 }
             ],
-            max_tokens=300
+            max_tokens=800
         )
 
-        # Obter a resposta do modelo
         resposta = response.choices[0].message.content
         return {"tipo_carater": resposta}
 
     except Exception as e:
-        return {"error": str(e)}
+        return JSONResponse(content={"error": str(e)}, status_code=500)
