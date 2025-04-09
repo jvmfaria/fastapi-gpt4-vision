@@ -66,6 +66,6 @@ async def classificar(imagem: UploadFile = File(...)):
     )
 
     # Obter a resposta do modelo corretamente
-    resposta = response['choices'][0]['message']['content']  # A correção aqui
+    resposta = response.choice[0].message.content
 
     return {"tipo_carater": resposta}
