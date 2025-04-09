@@ -3,3 +3,5 @@ uvicorn
 openai>=1.0.0
 python-multipart
 python-dotenv
+tiktoken
+Pillow
