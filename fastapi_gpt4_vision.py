@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse
 import base64
 import os
 import json
+import re
 from dotenv import load_dotenv
 from openai import OpenAI
 
@@ -58,7 +59,9 @@ async def classificar(imagem: UploadFile = File(...)):
         raw = response.choices[0].message.content
 
         try:
-            resultado = json.loads(raw)
+            # Remove blocos de código markdown, como ```json ... ```
+            cleaned_raw = re.sub(r"^```(?:json)?|```$", "", raw.strip(), flags=re.IGNORECASE).strip()
+            resultado = json.loads(cleaned_raw)
             return resultado
         except json.JSONDecodeError:
             return {
