@@ -28,8 +28,10 @@ async def classificar(imagem: UploadFile = File(...)):
         image_data_url = file_to_data_url(imagem)
 
         prompt = (
-            "Você é um analista reichiano experiente. Com base na imagem facial fornecida, analise e classifique os traços da pessoa nos tipos de caráter: "
+            "Você é um analista reichiano experiente. Além disso, você também domina os conceitos do corpo explica."
+            "Com base na imagem facial fornecida, analise e classifique os traços da pessoa nos tipos de caráter: "
             "oral, esquizóide, masoquista, psicopata e rígido. Para cada tipo, atribua uma pontuação de 0 a 10 indicando o quanto aquele traço está presente na expressão facial. "
+            "A soma dos valores deve ser sempre 10"
             "Retorne os resultados exclusivamente no seguinte formato JSON:\n"
             "{\n"
             "  \"oral\": <pontuação>,\n"
