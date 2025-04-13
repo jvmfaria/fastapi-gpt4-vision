@@ -44,7 +44,7 @@ async def classificar(imagem: UploadFile = File(...)):
         caracteristicas = ler_caracteristicas_dos_arquivos()
 
         prompt = (
-            "Você é um analista reichiano e especialista no método O Corpo Explica.\n"
+            "Você é um analista reichiano.\n"
             "A seguir estão as características físicas e expressivas associadas a cinco traços de caráter:\n\n"
             f"{caracteristicas}\n"
             "Com base na imagem facial enviada, avalie a presença de cada traço de caráter e forneça uma pontuação de 0 a 10, "
