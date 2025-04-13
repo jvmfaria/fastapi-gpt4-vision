@@ -7,7 +7,7 @@ import re
 from dotenv import load_dotenv
 from openai import OpenAI
 
-# Carrega variáveis de ambiente do .env
+# Carrega variáveis de ambiente
 load_dotenv()
 
 # Inicializa cliente OpenAI
@@ -16,62 +16,51 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 # Instância FastAPI
 app = FastAPI()
 
-# Diretório absoluto onde estão os arquivos dos traços de caráter
-CARACTERES_DIR = "D:/dataset_b/fastapi-gpt4-vision"
+# Diretório onde estão os arquivos dos traços de caráter
+TRAITS_DIR = "D:/dataset_b/fastapi-gpt4-vision"
 
-# Converte imagem para base64 em formato data URL
+TRAITS = ["esquizoide", "masoquista", "oral", "psicopata", "rigido"]
+
+# Função para converter imagem para base64 (data URL)
 def file_to_data_url(file: UploadFile) -> str:
     content = file.file.read()
     encoded = base64.b64encode(content).decode("utf-8")
     return f"data:{file.content_type};base64,{encoded}"
 
-# Lê os arquivos TXT dos traços de caráter
-def carregar_textos_dos_caracteres(diretorio=CARACTERES_DIR):
-    tipos = ["esquizoide", "oral", "masoquista", "psicopata", "rigido"]
-    textos = []
-    for tipo in tipos:
-        caminho = os.path.join(diretorio, f"{tipo}.txt")
+# Função para carregar textos dos traços de caráter
+def carregar_textos_tracos() -> str:
+    textos = ""
+    for traço in TRAITS:
+        caminho = os.path.join(TRAITS_DIR, f"{traço}.txt")
         if os.path.exists(caminho):
             with open(caminho, "r", encoding="utf-8") as f:
-                texto = f.read()
-            textos.append(f"{tipo.capitalize()}:\n{texto.strip()}")
-        else:
-            textos.append(f"{tipo.capitalize()}:\n(Arquivo não encontrado)")
-    return "\n\n".join(textos)
+                textos += f"\n\n🔹 {traço.capitalize()}:\n{f.read()}"
+    return textos.strip()
 
-# Gera o prompt completo com base nos arquivos TXT
-def gerar_prompt():
-    tracos_texto = carregar_textos_dos_caracteres()
-    prompt = (
-        "Você é um analista reichiano experiente e também domina profundamente os conceitos do estudo 'O Corpo Explica'.\n\n"
-        "A seguir estão os resumos dos cinco tipos de caráter com base nas observações físicas e comportamentais:\n\n"
-        f"{tracos_texto}\n\n"
-        "Com base na imagem facial fornecida, analise e classifique os traços da pessoa nos tipos de caráter: "
-        "oral, esquizóide, masoquista, psicopata e rígido.\n\n"
-        "Para cada tipo, atribua uma pontuação de 0 a 10 com base nas seguintes observações:\n"
-        "- Formato da cabeça\n"
-        "- Olhos\n"
-        "- Boca\n"
-        "- Postura\n"
-        "- Expressões faciais\n\n"
-        "A soma das pontuações deve ser sempre igual a 10.\n\n"
-        "Retorne os resultados exclusivamente no seguinte formato JSON:\n"
-        "{\n"
-        "  \"oral\": <pontuação>,\n"
-        "  \"esquizoide\": <pontuação>,\n"
-        "  \"masoquista\": <pontuação>,\n"
-        "  \"psicopata\": <pontuação>,\n"
-        "  \"rigido\": <pontuação>,\n"
-        "  \"explicacao\": \"<breve explicação do porquê de cada pontuação>\"\n"
-        "}"
-    )
-    return prompt
-
+# Função principal de classificação
 @app.post("/classificar")
 async def classificar(imagem: UploadFile = File(...)):
     try:
         image_data_url = file_to_data_url(imagem)
-        prompt = gerar_prompt()
+        textos_tracos = carregar_textos_tracos()
+
+        prompt = (
+            "Você é um analista experiente em psicologia corporal, especializado na análise reichiana e no estudo 'O Corpo Explica'. "
+            "Seu papel é avaliar traços de caráter com base em uma imagem facial, utilizando os critérios fornecidos abaixo.\n\n"
+            "Cada traço deve ser pontuado de 0 a 10, indicando o quanto ele está presente na expressão facial da pessoa. "
+            "A soma total deve ser obrigatoriamente 10 pontos.\n\n"
+            "📘 *Critérios para avaliação:*\n"
+            f"{textos_tracos}\n\n"
+            "📊 *Formato de resposta esperado (em JSON):*\n"
+            "{\n"
+            "  \"esquizoide\": <pontuação>,\n"
+            "  \"masoquista\": <pontuação>,\n"
+            "  \"oral\": <pontuação>,\n"
+            "  \"psicopata\": <pontuação>,\n"
+            "  \"rigido\": <pontuação>,\n"
+            "  \"explicacao\": \"<explique de forma breve os principais indícios observados em cada traço com base na imagem>\"\n"
+            "}"
+        )
 
         response = client.chat.completions.create(
             model="gpt-4-turbo",
@@ -91,7 +80,7 @@ async def classificar(imagem: UploadFile = File(...)):
         raw = response.choices[0].message.content
 
         try:
-            # Remove blocos markdown ```json ... ``` se existirem
+            # Remove blocos de código markdown, como ```json ... ```
             cleaned_raw = re.sub(r"^```(?:json)?|```$", "", raw.strip(), flags=re.IGNORECASE).strip()
             resultado = json.loads(cleaned_raw)
             return resultado
