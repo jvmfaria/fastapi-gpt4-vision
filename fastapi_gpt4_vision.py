@@ -6,6 +6,7 @@ import json
 import re
 from dotenv import load_dotenv
 from openai import OpenAI
+import matplotlib.pyplot as plt
 
 # Carrega variáveis de ambiente
 load_dotenv()
@@ -22,7 +23,7 @@ def file_to_data_url(file: UploadFile) -> str:
     encoded = base64.b64encode(content).decode("utf-8")
     return f"data:{file.content_type};base64,{encoded}"
 
-# Lê os textos dos traços de caráter salvos em arquivos
+# Lê os textos dos traços de caráter
 def carregar_tracos():
     tracos = {}
     nomes = ["esquizoide", "masoquista", "oral", "psicopata", "rigido"]
@@ -34,6 +35,51 @@ def carregar_tracos():
             tracos[nome] = f"(Descrição do traço {nome} não encontrada.)"
     return tracos
 
+# Formata a resposta como mensagem de WhatsApp
+def formatar_resposta(result):
+    return (
+        "🧠 *Análise dos Traços de Caráter*\n\n"
+        f"🔹 *Oral*: {result['oral']}\n"
+        f"🔹 *Esquizoide*: {result['esquizoide']}\n"
+        f"🔹 *Masoquista*: {result['masoquista']}\n"
+        f"🔹 *Psicopata*: {result['psicopata']}\n"
+        f"🔹 *Rígido*: {result['rigido']}\n\n"
+        f"📝 *Explicação:*\n{result['explicacao']}"
+    )
+
+# Gera gráfico de colunas e retorna como base64
+def gerar_grafico_base64(result):
+    labels = ["Oral", "Esquizoide", "Masoquista", "Psicopata", "Rígido"]
+    valores = [
+        result["oral"],
+        result["esquizoide"],
+        result["masoquista"],
+        result["psicopata"],
+        result["rigido"]
+    ]
+
+    plt.figure(figsize=(8, 5))
+    bars = plt.bar(labels, valores, color="#4A90E2")
+    plt.ylim(0, 10)
+    plt.title("Traços de Caráter – Análise Facial")
+    plt.xlabel("Traços")
+    plt.ylabel("Pontuação")
+
+    for bar in bars:
+        yval = bar.get_height()
+        plt.text(bar.get_x() + bar.get_width()/2, yval + 0.3, int(yval), ha="center", fontsize=10)
+
+    plt.tight_layout()
+    caminho = "grafico.png"
+    plt.savefig(caminho)
+    plt.close()
+
+    with open(caminho, "rb") as img_file:
+        grafico_base64 = base64.b64encode(img_file.read()).decode("utf-8")
+
+    return grafico_base64
+
+# Endpoint principal
 @app.post("/classificar")
 async def classificar(imagem: UploadFile = File(...)):
     try:
@@ -79,10 +125,17 @@ async def classificar(imagem: UploadFile = File(...)):
         raw = response.choices[0].message.content
 
         try:
-            # Remove blocos de código markdown, como ```json ... ```
             cleaned_raw = re.sub(r"^```(?:json)?|```$", "", raw.strip(), flags=re.IGNORECASE).strip()
             resultado = json.loads(cleaned_raw)
-            return resultado
+
+            mensagem = formatar_resposta(resultado)
+            grafico_base64 = gerar_grafico_base64(resultado)
+
+            return {
+                "mensagem": mensagem,
+                "grafico_base64": grafico_base64  # imagem para enviar pelo WhatsApp como mídia
+            }
+
         except json.JSONDecodeError:
             return {
                 "erro": "A resposta não está em formato JSON válido.",
