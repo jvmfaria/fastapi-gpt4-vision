@@ -10,56 +10,61 @@ from openai import OpenAI
 # Carrega variáveis de ambiente
 load_dotenv()
 
-# Inicializa cliente OpenAI
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
-# Instância FastAPI
 app = FastAPI()
 
-# Diretório onde estão os arquivos dos traços de caráter
-TRAITS_DIR = "D:/dataset_b/fastapi-gpt4-vision"
+# Função para ler características dos arquivos
+def ler_caracteristicas_dos_arquivos():
+    base_dir = "D:/dataset_b/fastapi-gpt4-vision"
+    arquivos = {
+        "oral": "oral.txt",
+        "esquizoide": "esquizoide.txt",
+        "masoquista": "masoquista.txt",
+        "psicopata": "psicopata.txt",
+        "rigido": "rigido.txt"
+    }
+    conteudos = []
+    for traço, nome_arquivo in arquivos.items():
+        caminho = os.path.join(base_dir, nome_arquivo)
+        if os.path.exists(caminho):
+            with open(caminho, "r", encoding="utf-8") as f:
+                conteudos.append(f"{traço.upper()}:\n{f.read().strip()}\n")
+    return "\n".join(conteudos)
 
-TRAITS = ["esquizoide", "masoquista", "oral", "psicopata", "rigido"]
-
-# Função para converter imagem para base64 (data URL)
+# Converte imagem para base64
 def file_to_data_url(file: UploadFile) -> str:
     content = file.file.read()
     encoded = base64.b64encode(content).decode("utf-8")
     return f"data:{file.content_type};base64,{encoded}"
 
-# Função para carregar textos dos traços de caráter
-def carregar_textos_tracos() -> str:
-    textos = ""
-    for traço in TRAITS:
-        caminho = os.path.join(TRAITS_DIR, f"{traço}.txt")
-        if os.path.exists(caminho):
-            with open(caminho, "r", encoding="utf-8") as f:
-                textos += f"\n\n🔹 {traço.capitalize()}:\n{f.read()}"
-    return textos.strip()
-
-# Função principal de classificação
 @app.post("/classificar")
 async def classificar(imagem: UploadFile = File(...)):
     try:
         image_data_url = file_to_data_url(imagem)
-        textos_tracos = carregar_textos_tracos()
+        caracteristicas = ler_caracteristicas_dos_arquivos()
 
         prompt = (
-            "Você é um analista experiente em psicologia corporal, especializado na análise reichiana. "
-            "Seu papel é avaliar traços de caráter com base em uma imagem facial, utilizando os critérios fornecidos abaixo.\n\n"
-            "Cada traço deve ser pontuado de 0 a 10, indicando o quanto ele está presente na expressão facial da pessoa. "
-            "A soma total deve ser obrigatoriamente 10 pontos.\n\n"
-            "📘 *Critérios para avaliação:*\n"
-            f"{textos_tracos}\n\n"
-            "📊 *Formato de resposta esperado (em JSON):*\n"
+            "Você é um analista reichiano e especialista no método O Corpo Explica.\n"
+            "A seguir estão as características físicas e expressivas associadas a cinco traços de caráter:\n\n"
+            f"{caracteristicas}\n"
+            "Com base na imagem facial enviada, avalie a presença de cada traço de caráter e forneça uma pontuação de 0 a 10, "
+            "sendo que a soma total deve ser igual a 10.\n"
+            "Para cada traço, forneça uma explicação breve do que foi observado na imagem e como isso influenciou sua pontuação.\n"
+            "Retorne no seguinte formato JSON:\n"
             "{\n"
+            "  \"oral\": <pontuação>,\n"
             "  \"esquizoide\": <pontuação>,\n"
             "  \"masoquista\": <pontuação>,\n"
-            "  \"oral\": <pontuação>,\n"
             "  \"psicopata\": <pontuação>,\n"
             "  \"rigido\": <pontuação>,\n"
-            "  \"explicacao\": \"<explique de forma breve os principais indícios observados em cada traço com base na imagem>\"\n"
-            "}"
+            "  \"explicacao\": {\n"
+            "    \"oral\": \"<justificativa>\",\n"
+            "    \"esquizoide\": \"<justificativa>\",\n"
+            "    \"masoquista\": \"<justificativa>\",\n"
+            "    \"psicopata\": \"<justificativa>\",\n"
+            "    \"rigido\": \"<justificativa>\"\n"
+            "  }\n"
+            "}\n"
         )
 
         response = client.chat.completions.create(
@@ -80,7 +85,6 @@ async def classificar(imagem: UploadFile = File(...)):
         raw = response.choices[0].message.content
 
         try:
-            # Remove blocos de código markdown, como ```json ... ```
             cleaned_raw = re.sub(r"^```(?:json)?|```$", "", raw.strip(), flags=re.IGNORECASE).strip()
             resultado = json.loads(cleaned_raw)
             return resultado
