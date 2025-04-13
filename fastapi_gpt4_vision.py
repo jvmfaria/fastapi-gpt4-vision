@@ -22,17 +22,35 @@ def file_to_data_url(file: UploadFile) -> str:
     encoded = base64.b64encode(content).decode("utf-8")
     return f"data:{file.content_type};base64,{encoded}"
 
+# Lê os textos dos traços de caráter salvos em arquivos
+def carregar_tracos():
+    tracos = {}
+    nomes = ["esquizoide", "masoquista", "oral", "psicopata", "rigido"]
+    for nome in nomes:
+        try:
+            with open(f"tracos/{nome}.txt", "r", encoding="utf-8") as f:
+                tracos[nome] = f.read()
+        except FileNotFoundError:
+            tracos[nome] = f"(Descrição do traço {nome} não encontrada.)"
+    return tracos
+
 @app.post("/classificar")
 async def classificar(imagem: UploadFile = File(...)):
     try:
         image_data_url = file_to_data_url(imagem)
+        tracos = carregar_tracos()
+
+        tracos_texto = "\n".join(
+            f"{nome.capitalize()}:\n{descricao}" for nome, descricao in tracos.items()
+        )
 
         prompt = (
-            "Você é um analista reichiano experiente. Além disso, você também domina os conceitos do corpo explica."
+            "Você é um analista reichiano experiente e também domina profundamente os conceitos do estudo 'O Corpo Explica'. "
+            "A seguir estão os resumos dos cinco tipos de caráter segundo esses estudos:\n\n"
+            f"{tracos_texto}\n\n"
             "Com base na imagem facial fornecida, analise e classifique os traços da pessoa nos tipos de caráter: "
-            "oral, esquizóide, masoquista, psicopata e rígido. Para cada tipo, atribua uma pontuação de 0 a 10 indicando o quanto aquele traço está presente na expressão facial. "
-            "A soma dos valores deve ser sempre 10"
-            "Retorne os resultados exclusivamente no seguinte formato JSON:\n"
+            "oral, esquizóide, masoquista, psicopata e rígido. Para cada tipo, atribua uma pontuação de 0 a 10, sendo que a soma total deve ser exatamente 10.\n"
+            "Retorne os resultados no formato JSON abaixo, seguido de uma breve explicação baseada nos estudos fornecidos:\n"
             "{\n"
             "  \"oral\": <pontuação>,\n"
             "  \"esquizoide\": <pontuação>,\n"
