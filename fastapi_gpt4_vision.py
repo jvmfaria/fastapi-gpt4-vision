@@ -45,7 +45,7 @@ async def classificar(imagem: UploadFile = File(...)):
         textos_tracos = carregar_textos_tracos()
 
         prompt = (
-            "Você é um analista experiente em psicologia corporal, especializado na análise reichiana e no estudo 'O Corpo Explica'. "
+            "Você é um analista experiente em psicologia corporal, especializado na análise reichiana. "
             "Seu papel é avaliar traços de caráter com base em uma imagem facial, utilizando os critérios fornecidos abaixo.\n\n"
             "Cada traço deve ser pontuado de 0 a 10, indicando o quanto ele está presente na expressão facial da pessoa. "
             "A soma total deve ser obrigatoriamente 10 pontos.\n\n"
