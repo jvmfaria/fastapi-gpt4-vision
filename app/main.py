@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.responses import JSONResponse
 import base64
 import os
@@ -13,9 +13,9 @@ load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 app = FastAPI()
 
-# Função para ler características dos arquivos
-def ler_caracteristicas_dos_arquivos():
-    base_dir = "D:/dataset_b/fastapi-gpt4-vision"
+BASE_DIR = os.getenv("BASE_DIR", "./app/caracteristicas")
+
+def carregar_caracteristicas():
     arquivos = {
         "oral": "oral.txt",
         "esquizoide": "esquizoide.txt",
@@ -24,16 +24,21 @@ def ler_caracteristicas_dos_arquivos():
         "rigido": "rigido.txt"
     }
     conteudos = []
-    for traço, nome_arquivo in arquivos.items():
-        caminho = os.path.join(base_dir, nome_arquivo)
+    for traco, nome_arquivo in arquivos.items():
+        caminho = os.path.join(BASE_DIR, nome_arquivo)
         if os.path.exists(caminho):
             with open(caminho, "r", encoding="utf-8") as f:
-                conteudos.append(f"{traço.upper()}:\n{f.read().strip()}\n")
+                conteudos.append(f"{traco.upper()}:\n{f.read().strip()}\n")
     return "\n".join(conteudos)
 
-# Converte imagem para base64
+CARACTERISTICAS_TEXTO = carregar_caracteristicas()
+
 def file_to_data_url(file: UploadFile) -> str:
+    if file.content_type not in ["image/jpeg", "image/png"]:
+        raise HTTPException(status_code=400, detail="Formato de imagem não suportado.")
     content = file.file.read()
+    if len(content) > 5 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Arquivo de imagem excede 5MB.")
     encoded = base64.b64encode(content).decode("utf-8")
     return f"data:{file.content_type};base64,{encoded}"
 
@@ -41,12 +46,10 @@ def file_to_data_url(file: UploadFile) -> str:
 async def classificar(imagem: UploadFile = File(...)):
     try:
         image_data_url = file_to_data_url(imagem)
-        caracteristicas = ler_caracteristicas_dos_arquivos()
 
-        prompt = (
-            "Você é um analista reichiano e especialista no método O Corpo Explica.\n"
+        prompt_instrucoes = (
             "A seguir estão as características físicas e expressivas associadas a cinco traços de caráter:\n\n"
-            f"{caracteristicas}\n"
+            f"{CARACTERISTICAS_TEXTO}\n"
             "Com base na imagem facial enviada, avalie a presença de cada traço de caráter e forneça uma pontuação de 0 a 10, "
             "sendo que a soma total deve ser igual a 10.\n"
             "Para cada traço, forneça uma explicação breve do que foi observado na imagem e como isso influenciou sua pontuação.\n"
@@ -70,7 +73,8 @@ async def classificar(imagem: UploadFile = File(...)):
         response = client.chat.completions.create(
             model="gpt-4-turbo",
             messages=[
-                {"role": "system", "content": prompt},
+                {"role": "system", "content": "Você é um analista reichiano e especialista no método O Corpo Explica."},
+                {"role": "user", "content": prompt_instrucoes},
                 {
                     "role": "user",
                     "content": [
@@ -79,6 +83,7 @@ async def classificar(imagem: UploadFile = File(...)):
                     ]
                 }
             ],
+            temperature=0,
             max_tokens=1000
         )
 
@@ -96,3 +101,7 @@ async def classificar(imagem: UploadFile = File(...)):
 
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
+
+@app.get("/caracteristicas")
+def obter_caracteristicas():
+    return {"caracteristicas": CARACTERISTICAS_TEXTO}
