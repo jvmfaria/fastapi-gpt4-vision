@@ -52,7 +52,13 @@ def formatar_mensagem(dados):
             mensagem.append(f"\n*{parte.capitalize()}*")
             for traco in ["oral", "esquizoide", "psicopata", "masoquista", "rigido"]:
                 ponto = bloco.get(traco, 0)
-                justificativa = bloco.get("explicacao", {}).get(traco, "")
+                explicacao = bloco.get("explicacao", "")
+                if isinstance(explicacao, dict):
+                    justificativa = explicacao.get(traco, "")
+                elif isinstance(explicacao, str):
+                    justificativa = explicacao
+                else:
+                    justificativa = ""
                 mensagem.append(f"• {traco.capitalize()}: {ponto} — {justificativa}")
     mensagem.append("\n🧠 *Total por traço*")
     for traco in ["oral", "esquizoide", "psicopata", "masoquista", "rigido"]:
@@ -78,7 +84,7 @@ async def classificar(imagem: UploadFile = File(...)):
             "Responda exatamente no seguinte formato JSON:\n"
             "{\n"
             "  \"olhos\": {\n"
-            "    \"oral\": 0-10, \"esquizoide\": 0-10, ..., \"explicacao\": { ... }\n"
+            "    \"oral\": 0-10, \"esquizoide\": 0-10, ..., \"explicacao\": { ... } ou \"<string>\"\n"
             "  },\n"
             "  \"boca\": { ... },\n"
             "  \"tronco\": { ... },\n"
