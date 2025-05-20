@@ -43,6 +43,24 @@ def file_to_data_url(file: UploadFile) -> str:
     encoded = base64.b64encode(content).decode("utf-8")
     return f"data:{file.content_type};base64,{encoded}"
 
+def formatar_mensagem(dados):
+    partes = ["olhos", "boca", "tronco", "quadril", "pernas"]
+    mensagem = ["📊 *Análise corporal completa por região*\n"]
+    for parte in partes:
+        bloco = dados.get(parte)
+        if isinstance(bloco, dict):
+            mensagem.append(f"\n*{parte.capitalize()}*")
+            for traco in ["oral", "esquizoide", "psicopata", "masoquista", "rigido"]:
+                ponto = bloco.get(traco, 0)
+                justificativa = bloco.get("explicacao", {}).get(traco, "")
+                mensagem.append(f"• {traco.capitalize()}: {ponto} — {justificativa}")
+    mensagem.append("\n🧠 *Total por traço*")
+    for traco in ["oral", "esquizoide", "psicopata", "masoquista", "rigido"]:
+        total = dados.get("soma_total_por_traco", {}).get(traco, 0)
+        mensagem.append(f"• {traco.capitalize()}: {total}")
+    mensagem.append("\n📌 *Metodologia*: O Corpo Explica")
+    return "\n".join(mensagem)
+
 @app.post("/classificar")
 async def classificar(imagem: UploadFile = File(...)):
     try:
@@ -94,31 +112,11 @@ async def classificar(imagem: UploadFile = File(...)):
         try:
             cleaned_raw = re.sub(r"^```(?:json)?|```$", "", raw.strip(), flags=re.IGNORECASE).strip()
             resultado = json.loads(cleaned_raw)
-            
-            # Gera mensagem formatada
-            def formatar_mensagem(dados):
-                partes = ["👁️ Olhos", "👄 Boca", "💪 Tronco", "🍑 Quadril", "🦵 Pernas"]
-                mensagem = ["📊 *Análise corporal completa por região*\n"]
-                for parte in ["olhos", "boca", "tronco", "quadril", "pernas"]:
-                    if parte in dados:
-                        mensagem.append(f"\n*{parte.capitalize()}*")
-                        for traco in ["oral", "esquizoide", "psicopata", "masoquista", "rigido"]:
-                            ponto = dados[parte].get(traco, 0)
-                            justificativa = dados[parte].get("explicacao", {}).get(traco, "")
-                            mensagem.append(f"• {traco.capitalize()}: {ponto} — {justificativa}")
-                mensagem.append("\n🧠 *Total por traço*")
-                for traco in ["oral", "esquizoide", "psicopata", "masoquista", "rigido"]:
-                    total = dados.get("soma_total_por_traco", {}).get(traco, 0)
-                    mensagem.append(f"• {traco.capitalize()}: {total}")
-                mensagem.append("\n📌 *Metodologia*: O Corpo Explica")
-                return "\n".join(mensagem)
-
             mensagem = formatar_mensagem(resultado)
             return {
                 "resultado": resultado,
                 "mensagem": mensagem
             }
-    
         except json.JSONDecodeError:
             return {
                 "erro": "A resposta não está em formato JSON válido.",
