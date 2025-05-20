@@ -112,14 +112,18 @@ async def classificar(imagem: UploadFile = File(...)):
         try:
             cleaned_raw = re.sub(r"^```(?:json)?|```$", "", raw.strip(), flags=re.IGNORECASE).strip()
             resultado = json.loads(cleaned_raw)
+
+            if not isinstance(resultado, dict):
+                raise ValueError("Resposta JSON não é um dicionário.")
+
             mensagem = formatar_mensagem(resultado)
             return {
                 "resultado": resultado,
                 "mensagem": mensagem
             }
-        except json.JSONDecodeError:
+        except Exception as e:
             return {
-                "erro": "A resposta não está em formato JSON válido.",
+                "erro": f"Erro ao interpretar resposta da OpenAI: {str(e)}",
                 "resposta_bruta": raw
             }
 
