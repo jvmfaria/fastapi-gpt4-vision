@@ -1,3 +1,4 @@
+
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.responses import JSONResponse
 import base64
@@ -48,24 +49,25 @@ async def classificar(imagem: UploadFile = File(...)):
         image_data_url = file_to_data_url(imagem)
 
         prompt_instrucoes = (
+            "Você é um analista reichiano e especialista no método O Corpo Explica.\n"
             "A seguir estão as características físicas e expressivas associadas a cinco traços de caráter:\n\n"
             f"{CARACTERISTICAS_TEXTO}\n"
-            "Com base na imagem facial enviada, avalie a presença de cada traço de caráter e forneça uma pontuação de 0 a 10, "
-            "sendo que a soma total deve ser igual a 10.\n"
-            "Para cada traço, forneça uma explicação breve do que foi observado na imagem e como isso influenciou sua pontuação.\n"
-            "Retorne no seguinte formato JSON:\n"
+            "Com base na imagem de corpo inteiro enviada, avalie separadamente as seguintes partes: olhos, boca, tronco, quadril e pernas.\n"
+            "Para cada parte, atribua uma pontuação de 0 a 10 para cada um dos cinco traços de caráter:\n"
+            "- Oral\n- Esquizoide\n- Psicopata\n- Masoquista\n- Rígido\n"
+            "Em seguida, forneça uma explicação breve do que foi observado na imagem e como isso influenciou cada pontuação.\n"
+            "No final, forneça a soma total por traço, considerando todas as partes.\n"
+            "Responda exatamente no seguinte formato JSON:\n"
             "{\n"
-            "  \"oral\": <pontuação>,\n"
-            "  \"esquizoide\": <pontuação>,\n"
-            "  \"masoquista\": <pontuação>,\n"
-            "  \"psicopata\": <pontuação>,\n"
-            "  \"rigido\": <pontuação>,\n"
-            "  \"explicacao\": {\n"
-            "    \"oral\": \"<justificativa>\",\n"
-            "    \"esquizoide\": \"<justificativa>\",\n"
-            "    \"masoquista\": \"<justificativa>\",\n"
-            "    \"psicopata\": \"<justificativa>\",\n"
-            "    \"rigido\": \"<justificativa>\"\n"
+            "  \"olhos\": {\n"
+            "    \"oral\": 0-10, \"esquizoide\": 0-10, ..., \"explicacao\": { ... }\n"
+            "  },\n"
+            "  \"boca\": { ... },\n"
+            "  \"tronco\": { ... },\n"
+            "  \"quadril\": { ... },\n"
+            "  \"pernas\": { ... },\n"
+            "  \"soma_total_por_traco\": {\n"
+            "    \"oral\": <soma>, \"esquizoide\": <soma>, ...\n"
             "  }\n"
             "}\n"
         )
@@ -78,13 +80,13 @@ async def classificar(imagem: UploadFile = File(...)):
                 {
                     "role": "user",
                     "content": [
-                        {"type": "text", "text": "Analise a imagem abaixo:"},
+                        {"type": "text", "text": "Analise a imagem de corpo inteiro abaixo:"},
                         {"type": "image_url", "image_url": {"url": image_data_url}}
                     ]
                 }
             ],
             temperature=0,
-            max_tokens=1000
+            max_tokens=2000
         )
 
         raw = response.choices[0].message.content
