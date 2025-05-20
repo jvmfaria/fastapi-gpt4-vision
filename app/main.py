@@ -50,16 +50,18 @@ def formatar_mensagem(dados):
         bloco = dados.get(parte)
         if isinstance(bloco, dict):
             mensagem.append(f"\n*{parte.capitalize()}*")
+            explicacao_geral = ""
             for traco in ["oral", "esquizoide", "psicopata", "masoquista", "rigido"]:
                 ponto = bloco.get(traco, 0)
                 explicacao = bloco.get("explicacao", "")
                 if isinstance(explicacao, dict):
                     justificativa = explicacao.get(traco, "")
+                    mensagem.append(f"• {traco.capitalize()}: {ponto} — {justificativa}")
                 elif isinstance(explicacao, str):
-                    justificativa = explicacao
-                else:
-                    justificativa = ""
-                mensagem.append(f"• {traco.capitalize()}: {ponto} — {justificativa}")
+                    explicacao_geral = explicacao
+                    mensagem.append(f"• {traco.capitalize()}: {ponto}")
+            if explicacao_geral:
+                mensagem.append(f"🔎 Observação: {explicacao_geral}")
     mensagem.append("\n🧠 *Total por traço*")
     for traco in ["oral", "esquizoide", "psicopata", "masoquista", "rigido"]:
         total = dados.get("soma_total_por_traco", {}).get(traco, 0)
@@ -79,12 +81,13 @@ async def classificar(imagem: UploadFile = File(...)):
             "Com base na imagem de corpo inteiro enviada, avalie separadamente as seguintes partes: olhos, boca, tronco, quadril e pernas.\n"
             "Para cada parte, atribua uma pontuação de 0 a 10 para cada um dos cinco traços de caráter:\n"
             "- Oral\n- Esquizoide\n- Psicopata\n- Masoquista\n- Rígido\n"
-            "Em seguida, forneça uma explicação breve do que foi observado na imagem e como isso influenciou cada pontuação.\n"
+            "Para cada parte, também forneça uma explicação separada para cada traço de caráter observado, dentro de um objeto JSON chamado 'explicacao'.\n"
+            "O campo 'explicacao' deve conter um objeto com as chaves 'oral', 'esquizoide', 'psicopata', 'masoquista' e 'rigido', e os respectivos textos explicativos como valores.\n"
             "No final, forneça a soma total por traço, considerando todas as partes.\n"
             "Responda exatamente no seguinte formato JSON:\n"
             "{\n"
             "  \"olhos\": {\n"
-            "    \"oral\": 0-10, \"esquizoide\": 0-10, ..., \"explicacao\": { ... } ou \"<string>\"\n"
+            "    \"oral\": 0-10, \"esquizoide\": 0-10, ..., \"explicacao\": { \"oral\": \"...\", ... }\n"
             "  },\n"
             "  \"boca\": { ... },\n"
             "  \"tronco\": { ... },\n"
