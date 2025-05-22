@@ -1,4 +1,3 @@
-
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.responses import JSONResponse
 import base64
@@ -66,7 +65,7 @@ def formatar_mensagem(dados):
     for traco in ["oral", "esquizoide", "psicopata", "masoquista", "rigido"]:
         total = dados.get("soma_total_por_traco", {}).get(traco, 0)
         mensagem.append(f"• {traco.capitalize()}: {total}")
-    mensagem.append("\n📌 *Metodologia*: O Corpo Explica")
+    mensagem.append("\n📌 *Metodologia*: Corphus")
     return "\n".join(mensagem)
 
 @app.post("/classificar")
@@ -79,15 +78,21 @@ async def classificar(imagem: UploadFile = File(...)):
             "A seguir estão as características físicas e expressivas associadas a cinco traços de caráter:\n\n"
             f"{CARACTERISTICAS_TEXTO}\n"
             "Com base na imagem de corpo inteiro enviada, avalie separadamente as seguintes partes: olhos, boca, tronco, quadril e pernas.\n"
-            "Para cada parte, atribua uma pontuação de 0 a 10 para cada um dos cinco traços de caráter:\n"
-            "- Oral\n- Esquizoide\n- Psicopata\n- Masoquista\n- Rígido\n"
-            "Para cada parte, também forneça uma explicação separada para cada traço de caráter observado, dentro de um objeto JSON chamado 'explicacao'.\n"
-            "O campo 'explicacao' deve conter um objeto com as chaves 'oral', 'esquizoide', 'psicopata', 'masoquista' e 'rigido', e os respectivos textos explicativos como valores.\n"
+            "Para cada parte, distribua exatamente **10 pontos** entre os cinco traços de caráter:\n"
+            "- Oral\n- Esquizoide\n- Psicopata\n- Masoquista\n- Rígido\n\n"
+            "A distribuição deve refletir o quanto cada traço está presente visualmente naquela parte.\n"
+            "A soma das pontuações de cada parte deve ser obrigatoriamente **igual a 10** (não menos, não mais).\n\n"
+            "Exemplo: Se o traço rígido for muito evidente no tronco, ele pode receber 6 pontos, enquanto os outros traços recebem valores menores, respeitando o total de 10.\n\n"
+            "⚠️ Regras obrigatórias:\n"
+            "- Cada parte deve somar exatamente 10 pontos entre os cinco traços.\n"
+            "- A resposta será rejeitada se alguma parte tiver soma diferente de 10.\n\n"
+            "Para cada parte, forneça também uma explicação separada para cada traço observado, dentro de um objeto JSON chamado 'explicacao'.\n"
+            "O campo 'explicacao' deve conter um objeto com as chaves 'oral', 'esquizoide', 'psicopata', 'masoquista' e 'rigido', e os respectivos textos explicativos como valores.\n\n"
             "No final, forneça a soma total por traço, considerando todas as partes.\n"
             "Responda exatamente no seguinte formato JSON:\n"
             "{\n"
             "  \"olhos\": {\n"
-            "    \"oral\": 0-10, \"esquizoide\": 0-10, ..., \"explicacao\": { \"oral\": \"...\", ... }\n"
+            "    \"oral\": int, \"esquizoide\": int, ..., \"explicacao\": { \"oral\": \"...\", ... }\n"
             "  },\n"
             "  \"boca\": { ... },\n"
             "  \"tronco\": { ... },\n"
@@ -125,11 +130,23 @@ async def classificar(imagem: UploadFile = File(...)):
             if not isinstance(resultado, dict):
                 raise ValueError("Resposta JSON não é um dicionário.")
 
+            # Validação: soma dos traços por parte do corpo deve ser 10
+            partes = ["olhos", "boca", "tronco", "quadril", "pernas"]
+            traços = ["oral", "esquizoide", "psicopata", "masoquista", "rigido"]
+
+            for parte in partes:
+                bloco = resultado.get(parte)
+                if isinstance(bloco, dict):
+                    soma = sum(bloco.get(traco, 0) for traco in traços)
+                    if soma != 10:
+                        raise ValueError(f"A soma dos traços em '{parte}' é {soma}, mas deveria ser 10.")
+
             mensagem = formatar_mensagem(resultado)
             return {
                 "resultado": resultado,
                 "mensagem": mensagem
             }
+
         except Exception as e:
             return {
                 "erro": f"Erro ao interpretar resposta da OpenAI: {str(e)}",
