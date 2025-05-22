@@ -65,7 +65,7 @@ def formatar_mensagem(dados):
     for traco in ["oral", "esquizoide", "psicopata", "masoquista", "rigido"]:
         total = dados.get("soma_total_por_traco", {}).get(traco, 0)
         mensagem.append(f"• {traco.capitalize()}: {total}")
-    mensagem.append("\n📌 *Metodologia*: Corphus")
+    mensagem.append("\n📌 *Metodologia*: Corphus!")
     return "\n".join(mensagem)
 
 @app.post("/classificar")
