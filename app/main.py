@@ -15,8 +15,8 @@ app = FastAPI()
 
 BASE_DIR = os.getenv("BASE_DIR", "./app/caracteristicas")
 
-TRAÇOS = ["esquizoide", "masoquista", "oral", "psicopata", "rigido"]
-PARTES = ["cabeça", "olhos", "boca", "tronco", "quadril", "pernas"]
+TRAÇOS = ["oral", "esquizoide", "psicopata", "masoquista", "rigido"]
+PARTES = ["olhos", "boca", "tronco", "quadril", "pernas"]
 
 
 def carregar_caracteristicas():
@@ -109,7 +109,6 @@ A seguir estão as descrições de referência dos cinco traços de caráter:
 {CARACTERISTICAS_TEXTO}
 
 Com base na imagem de corpo inteiro enviada, avalie separadamente as seguintes partes do corpo:
-- Cabeça
 - Olhos
 - Boca
 - Tronco
@@ -120,30 +119,30 @@ Distribua exatamente 10 pontos entre os cinco traços para cada parte do corpo (
 
 ⚠️ IMPORTANTE: Sua resposta deve ser obrigatoriamente no formato JSON válido, com a seguinte estrutura:
 
-{
-  "olhos": {
-    "esquizoide": int,
-    "masoquista": int,
+{{
+  "olhos": {{
     "oral": int,
+    "esquizoide": int,
     "psicopata": int,
+    "masoquista": int,
     "rigido": int,
-    "explicacao": {
-      "esquizoide": "texto...",
-      "masoquista": "texto...",
+    "explicacao": {{
       "oral": "texto...",
+      "esquizoide": "texto...",
       "psicopata": "texto...",
+      "masoquista": "texto...",
       "rigido": "texto..."
-    }
-  },
+    }}
+  }},
   ...
-  "soma_total_por_traco": {
-    "esquizoide": int,
-    "masoquista": int,
+  "soma_total_por_traco": {{
     "oral": int,
+    "esquizoide": int,
     "psicopata": int,
+    "masoquista": int,
     "rigido": int
-  }
-}
+  }}
+}}
 
 Não explique fora do JSON. Apenas retorne o objeto diretamente.
 
