@@ -15,14 +15,12 @@ app = FastAPI()
 
 BASE_DIR = os.getenv("BASE_DIR", "./app/caracteristicas")
 
+TRAÇOS = ["oral", "esquizoide", "psicopata", "masoquista", "rigido"]
+PARTES = ["olhos", "boca", "tronco", "quadril", "pernas"]
+
+
 def carregar_caracteristicas():
-    arquivos = {
-        "oral": "oral.txt",
-        "esquizoide": "esquizoide.txt",
-        "masoquista": "masoquista.txt",
-        "psicopata": "psicopata.txt",
-        "rigido": "rigido.txt"
-    }
+    arquivos = {traco: f"{traco}.txt" for traco in TRAÇOS}
     conteudos = []
     for traco, nome_arquivo in arquivos.items():
         caminho = os.path.join(BASE_DIR, nome_arquivo)
@@ -33,6 +31,7 @@ def carregar_caracteristicas():
 
 CARACTERISTICAS_TEXTO = carregar_caracteristicas()
 
+
 def file_to_data_url(file: UploadFile) -> str:
     if file.content_type not in ["image/jpeg", "image/png"]:
         raise HTTPException(status_code=400, detail="Formato de imagem não suportado.")
@@ -42,15 +41,15 @@ def file_to_data_url(file: UploadFile) -> str:
     encoded = base64.b64encode(content).decode("utf-8")
     return f"data:{file.content_type};base64,{encoded}"
 
+
 def formatar_mensagem(dados):
-    partes = ["olhos", "boca", "tronco", "quadril", "pernas"]
-    mensagem = ["📊 *Análise corporal completa por região*\n"]
-    for parte in partes:
+    mensagem = ["\U0001F4CA *Análise corporal completa por região*\n"]
+    for parte in PARTES:
         bloco = dados.get(parte)
         if isinstance(bloco, dict):
             mensagem.append(f"\n*{parte.capitalize()}*")
             explicacao_geral = ""
-            for traco in ["oral", "esquizoide", "psicopata", "masoquista", "rigido"]:
+            for traco in TRAÇOS:
                 ponto = bloco.get(traco, 0)
                 explicacao = bloco.get("explicacao", "")
                 if isinstance(explicacao, dict):
@@ -60,48 +59,73 @@ def formatar_mensagem(dados):
                     explicacao_geral = explicacao
                     mensagem.append(f"• {traco.capitalize()}: {ponto}")
             if explicacao_geral:
-                mensagem.append(f"🔎 Observação: {explicacao_geral}")
-    mensagem.append("\n🧠 *Total por traço*")
-    for traco in ["oral", "esquizoide", "psicopata", "masoquista", "rigido"]:
+                mensagem.append(f"\U0001F50E Observação: {explicacao_geral}")
+    mensagem.append("\n\U0001F9E0 *Total por traço*")
+    for traco in TRAÇOS:
         total = dados.get("soma_total_por_traco", {}).get(traco, 0)
         mensagem.append(f"• {traco.capitalize()}: {total}")
-    mensagem.append("\n📌 *Metodologia*: Corphus!")
+    mensagem.append("\n\U0001F4CC *Metodologia*: Corphus!")
     return "\n".join(mensagem)
+
+
+def gerar_prompt_relatorio(dados_classificacao, nome_cliente):
+    return f"""
+Você é a assistente Lia – Linguagem Integrativa de Autoconhecimento, da Corphus.
+
+Com base na seguinte análise de traços de caráter, construa um relatório completo e humanizado no estilo terapêutico comportamental. Use linguagem sensível, motivadora e com base reichiana.
+
+Nome do Cliente: {nome_cliente}
+
+Dados da análise (soma total por traço):
+{json.dumps(dados_classificacao["soma_total_por_traco"], indent=2)}
+
+Com base nesses dados, siga a estrutura abaixo:
+
+1. Resumo Inicial
+2. Dores e Recursos Identificados
+3. Traços que Explicam seu Funcionamento
+4. Padrões de Dependência Emocional
+5. Escolhas Inconscientes
+6. Impactos das Dores
+7. Virada de Chave
+8. Próximos Passos
+9. Conclusão
+
+Finalize com a assinatura:
+Com carinho,
+Lia 💚
+"""
+
 
 @app.post("/classificar")
 async def classificar(imagem: UploadFile = File(...)):
     try:
         image_data_url = file_to_data_url(imagem)
 
-        prompt_instrucoes = (
-            "Você é um analista reichiano e especialista no método O Corpo Explica.\n"
-            "A seguir estão as descrições de referência dos cinco traços de caráter (oral, esquizoide, psicopata, masoquista e rígido). Elas estão organizadas com base em observações físicas e expressivas e devem ser usadas como critério principal para análise:\n\n"
-            f"{CARACTERISTICAS_TEXTO}\n"
-            "Com base na imagem de corpo inteiro enviada, avalie **separadamente** as seguintes partes do corpo:\n"
-            "- Olhos\n- Boca\n- Tronco\n- Quadril\n- Pernas\n\n"
-            "Para cada parte, distribua exatamente **10 pontos** entre os cinco traços de caráter, com base nas características visuais observadas conforme descritas nos textos acima.\n\n"
-            "⚠️ Regras obrigatórias:\n"
-            "- A soma das pontuações dos cinco traços deve ser exatamente **10 por parte** (nem mais, nem menos).\n"
-            "- Cada parte do corpo deve ser analisada **de forma independente**.\n"
-            "- As distribuições de pontos devem **variar entre as partes**, conforme os sinais e expressões específicos de cada região. Não repita a mesma distribuição para todas as partes.\n"
-            "- O uso das descrições dos traços fornecidos é **obrigatório** para justificar a pontuação atribuída.\n\n"
-            "Para cada parte, forneça também uma explicação separada para cada traço observado, dentro de um objeto JSON chamado 'explicacao'.\n"
-            "O campo 'explicacao' deve conter um objeto com as chaves 'oral', 'esquizoide', 'psicopata', 'masoquista' e 'rigido', e os respectivos textos explicativos como valores.\n\n"
-            "Ao final, forneça a soma total por traço considerando todas as partes.\n"
-            "Responda **exatamente** no seguinte formato JSON:\n"
-            "{\n"
-            "  \"olhos\": {\n"
-            "    \"oral\": int, \"esquizoide\": int, ..., \"explicacao\": { \"oral\": \"...\", ... }\n"
-            "  },\n"
-            "  \"boca\": { ... },\n"
-            "  \"tronco\": { ... },\n"
-            "  \"quadril\": { ... },\n"
-            "  \"pernas\": { ... },\n"
-            "  \"soma_total_por_traco\": {\n"
-            "    \"oral\": <soma>, \"esquizoide\": <soma>, ...\n"
-            "  }\n"
-            "}\n"
-        )
+        prompt_instrucoes = f"""
+Você é um analista reichiano e especialista no método O Corpo Explica.
+A seguir estão as descrições de referência dos cinco traços de caráter:
+
+{CARACTERISTICAS_TEXTO}
+
+Com base na imagem de corpo inteiro enviada, avalie separadamente as seguintes partes do corpo:
+- Olhos
+- Boca
+- Tronco
+- Quadril
+- Pernas
+
+Distribua exatamente 10 pontos entre os cinco traços para cada parte.
+Inclua uma explicação por traço em um objeto chamado 'explicacao'.
+
+Formato de resposta:
+{{
+  "olhos": {{ "oral": int, ..., "explicacao": {{ ... }} }},
+  "boca": {{ ... }},
+  ...
+  "soma_total_por_traco": {{ "oral": soma, ... }}
+}}
+"""
 
         response = client.chat.completions.create(
             model="gpt-4-turbo",
@@ -121,39 +145,45 @@ async def classificar(imagem: UploadFile = File(...)):
         )
 
         raw = response.choices[0].message.content
+        cleaned_raw = re.sub(r"^```(?:json)?|```$", "", raw.strip(), flags=re.IGNORECASE).strip()
+        resultado = json.loads(cleaned_raw)
 
-        try:
-            cleaned_raw = re.sub(r"^```(?:json)?|```$", "", raw.strip(), flags=re.IGNORECASE).strip()
-            resultado = json.loads(cleaned_raw)
+        for parte in PARTES:
+            bloco = resultado.get(parte)
+            if isinstance(bloco, dict):
+                soma = sum(bloco.get(traco, 0) for traco in TRAÇOS)
+                if soma != 10:
+                    raise ValueError(f"A soma dos traços em '{parte}' é {soma}, mas deveria ser 10.")
 
-            if not isinstance(resultado, dict):
-                raise ValueError("Resposta JSON não é um dicionário.")
-
-            # Validação: soma dos traços por parte do corpo deve ser 10
-            partes = ["olhos", "boca", "tronco", "quadril", "pernas"]
-            traços = ["oral", "esquizoide", "psicopata", "masoquista", "rigido"]
-
-            for parte in partes:
-                bloco = resultado.get(parte)
-                if isinstance(bloco, dict):
-                    soma = sum(bloco.get(traco, 0) for traco in traços)
-                    if soma != 10:
-                        raise ValueError(f"A soma dos traços em '{parte}' é {soma}, mas deveria ser 10.")
-
-            mensagem = formatar_mensagem(resultado)
-            return {
-                "resultado": resultado,
-                "mensagem": mensagem
-            }
-
-        except Exception as e:
-            return {
-                "erro": f"Erro ao interpretar resposta da OpenAI: {str(e)}",
-                "resposta_bruta": raw
-            }
+        mensagem = formatar_mensagem(resultado)
+        return {"resultado": resultado, "mensagem": mensagem}
 
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
+
+
+@app.post("/gerar-relatorio")
+async def gerar_relatorio(payload: dict):
+    nome_cliente = payload.get("nome_cliente", "Cliente")
+    dados_classificacao = payload.get("dados_classificacao")
+
+    if not dados_classificacao:
+        raise HTTPException(status_code=400, detail="Dados de classificação ausentes.")
+
+    prompt = gerar_prompt_relatorio(dados_classificacao, nome_cliente)
+
+    response = client.chat.completions.create(
+        model="gpt-4-turbo",
+        messages=[
+            {"role": "system", "content": "Você é a assistente Lia, uma IA sensível e acolhedora."},
+            {"role": "user", "content": prompt}
+        ],
+        temperature=0.8,
+        max_tokens=2500
+    )
+
+    return {"relatorio": response.choices[0].message.content}
+
 
 @app.get("/caracteristicas")
 def obter_caracteristicas():
