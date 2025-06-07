@@ -15,7 +15,7 @@ app = FastAPI()
 
 BASE_DIR = os.getenv("BASE_DIR", "./app/caracteristicas")
 
-TRAÇOS = ["oral", "esquizoide", "psicopata", "masoquista", "rigido"]
+TRAÇOS = ["esquizoide", "oral", "masoquista", "psicopata", "rigido"]
 PARTES = ["cabeça", "olhos", "boca", "tronco", "quadril", "pernas"]
 
 
@@ -116,7 +116,7 @@ Com base na imagem de corpo inteiro enviada, avalie separadamente as seguintes p
 - Quadril
 - Pernas
 
-Distribua exatamente 10 pontos entre os cinco traços para cada parte.
+Distribua exatamente 10 pontos entre os cinco traços para cada parte. Idealmente, distribua esses pontos entre todos os traços, sempre com base nas justificativas visuais descritas nos textos de referência. Evite atribuir zero a múltiplos traços, a menos que haja uma justificativa clara e coerente.
 Inclua uma explicação por traço em um objeto chamado 'explicacao'.
 
 Formato de resposta:
@@ -157,6 +157,9 @@ Formato de resposta:
             if isinstance(bloco, dict):
                 soma = sum(bloco.get(traco, 0) for traco in TRAÇOS)
                 if soma != 10:
+                    raise ValueError(f"A soma dos traços em '{parte}' é {soma}, mas deveria ser 10.")
+                if all(bloco.get(traco, 0) == 0 for traco in TRAÇOS):
+                    raise ValueError(f"A parte '{parte}' não possui distribuição significativa entre os traços. Distribua de forma coerente com os textos de referência.")
                     raise ValueError(f"A soma dos traços em '{parte}' é {soma}, mas deveria ser 10.")
 
         mensagem = formatar_mensagem(resultado)
