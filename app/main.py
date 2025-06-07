@@ -4,6 +4,7 @@ import base64
 import os
 import json
 import re
+from datetime import datetime
 from dotenv import load_dotenv
 from openai import OpenAI
 
@@ -68,32 +69,57 @@ def formatar_mensagem(dados):
     return "\n".join(mensagem)
 
 
-def gerar_prompt_relatorio(dados_classificacao, nome_cliente):
+def gerar_prompt_relatorio(dados_classificacao, nome_cliente, data_atendimento):
     return f"""
 Você é a assistente Lia – Linguagem Integrativa de Autoconhecimento, da Corphus.
 
-Com base na seguinte análise de traços de caráter, construa um relatório completo e humanizado no estilo terapêutico comportamental. Use linguagem sensível, motivadora e com base reichiana.
+Sua tarefa é gerar um relatório completo e humanizado de análise corporal, no formato JSON, com base no método "O Corpo Explica" e na psicologia reichiana.
 
-Nome do Cliente: {nome_cliente}
+⚠️ Responda apenas com um objeto JSON estruturado com os seguintes campos:
 
-Dados da análise (soma total por traço):
+{{
+  "cabecalho": {{
+    "nome_cliente": "{nome_cliente}",
+    "data_atendimento": "{data_atendimento}",
+    "nome_analista": "Márcio Conceição",
+    "titulo": "Relatório de Análise da Sua História"
+  }},
+  "objetivo": "texto explicando o objetivo do relatório",
+  "resumo_inicial": "texto acolhedor começando com '{nome_cliente}, a sua história revela...'",
+  "dores_e_recursos": {{
+    "dores": ["listar 3 a 5 dores reais"],
+    "recursos": ["listar 3 a 5 forças internas"]
+  }},
+  "tracos_que_explicam": "texto explicando os traços dominantes e como atuam",
+  "padroes_dependencia_emocional": ["listar ao menos 3 padrões com exemplo"],
+  "escolhas_inconscientes": [
+    {{
+      "decisao": "descrição da decisão inconsciente",
+      "origem": "qual medo ou dor originou essa decisão"
+    }}
+  ],
+  "impactos_das_dores": ["3 a 5 impactos na vida conjugal, financeira, familiar"],
+  "virada_de_chave": "nova forma de pensar e agir proposta",
+  "proximos_passos": ["3 a 5 decisões estratégicas"],
+  "acoes_praticas": [
+    {{
+      "oque": "ação prática",
+      "como": "como realizar",
+      "porque": "propósito emocional por trás"
+    }}
+  ],
+  "conclusao": "mensagem final motivacional"
+}}
+
+Dados de entrada para análise:
+
+Soma total por traço:
 {json.dumps(dados_classificacao["soma_total_por_traco"], indent=2)}
 
-Com base nesses dados, siga a estrutura abaixo:
+Análise por parte do corpo:
+{json.dumps({parte: dados_classificacao[parte]["explicacao"] for parte in PARTES}, indent=2)}
 
-1. Resumo Inicial
-2. Dores e Recursos Identificados
-3. Traços que Explicam seu Funcionamento
-4. Padrões de Dependência Emocional
-5. Escolhas Inconscientes
-6. Impactos das Dores
-7. Virada de Chave
-8. Próximos Passos
-9. Conclusão
-
-Finalize com a assinatura:
-Com carinho,
-Lia 💚
+⚠️ Retorne somente um objeto JSON válido. Não inclua explicações fora dele.
 """
 
 
@@ -115,26 +141,16 @@ Com base na imagem de corpo inteiro enviada, avalie separadamente as seguintes p
 - Quadril
 - Pernas
 
-Distribua exatamente 10 pontos entre os cinco traços para cada parte do corpo (olhos, boca, tronco, quadril e pernas).
+Distribua exatamente 10 pontos entre os cinco traços para cada parte do corpo.
 
 ⚠️ IMPORTANTE: Sua resposta deve ser obrigatoriamente no formato JSON válido, com a seguinte estrutura:
 
 {{
-  "olhos": {{
-    "oral": int,
-    "esquizoide": int,
-    "psicopata": int,
-    "masoquista": int,
-    "rigido": int,
-    "explicacao": {{
-      "oral": "texto...",
-      "esquizoide": "texto...",
-      "psicopata": "texto...",
-      "masoquista": "texto...",
-      "rigido": "texto..."
-    }}
-  }},
-  ...
+  "olhos": {{...}},
+  "boca": {{...}},
+  "tronco": {{...}},
+  "quadril": {{...}},
+  "pernas": {{...}},
   "soma_total_por_traco": {{
     "oral": int,
     "esquizoide": int,
@@ -143,22 +159,12 @@ Distribua exatamente 10 pontos entre os cinco traços para cada parte do corpo (
     "rigido": int
   }}
 }}
-
-Não explique fora do JSON. Apenas retorne o objeto diretamente.
-
-Formato de resposta:
-{{
-  "olhos": {{ "oral": int, ..., "explicacao": {{ ... }} }},
-  "boca": {{ ... }},
-  ...
-  "soma_total_por_traco": {{ "oral": soma, ... }}
-}}
 """
 
         response = client.chat.completions.create(
             model="gpt-4-turbo",
             messages=[
-                {"role": "system", "content": "Você é um analista reichiano e especialista no método O Corpo Explica."},
+                {"role": "system", "content": "Você é um analista reichiano especialista em linguagem corporal."},
                 {"role": "user", "content": prompt_instrucoes},
                 {
                     "role": "user",
@@ -187,7 +193,7 @@ Formato de resposta:
                 if soma != 10:
                     raise ValueError(f"A soma dos traços em '{parte}' é {soma}, mas deveria ser 10.")
                 if all(bloco.get(traco, 0) == 0 for traco in TRAÇOS):
-                    raise ValueError(f"A parte '{parte}' não possui distribuição significativa entre os traços. Distribua de forma coerente com os textos de referência.")
+                    raise ValueError(f"A parte '{parte}' não possui distribuição significativa entre os traços.")
 
         mensagem = formatar_mensagem(resultado)
         return {"resultado": resultado, "mensagem": mensagem}
@@ -200,11 +206,12 @@ Formato de resposta:
 async def gerar_relatorio(payload: dict):
     nome_cliente = payload.get("nome_cliente", "Cliente")
     dados_classificacao = payload.get("dados_classificacao")
+    data_atendimento = payload.get("data_atendimento", datetime.today().strftime("%d/%m/%Y"))
 
     if not dados_classificacao:
         raise HTTPException(status_code=400, detail="Dados de classificação ausentes.")
 
-    prompt = gerar_prompt_relatorio(dados_classificacao, nome_cliente)
+    prompt = gerar_prompt_relatorio(dados_classificacao, nome_cliente, data_atendimento)
 
     response = client.chat.completions.create(
         model="gpt-4-turbo",
@@ -213,10 +220,18 @@ async def gerar_relatorio(payload: dict):
             {"role": "user", "content": prompt}
         ],
         temperature=0.8,
-        max_tokens=2500
+        max_tokens=3000
     )
 
-    return {"relatorio": response.choices[0].message.content}
+    raw = response.choices[0].message.content or ""
+    cleaned_raw = re.sub(r"^```(?:json)?\s*|```$", "", raw.strip(), flags=re.IGNORECASE).strip()
+
+    try:
+        resultado_json = json.loads(cleaned_raw)
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=500, detail="Resposta da IA não pôde ser convertida em JSON.")
+
+    return {"relatorio": resultado_json}
 
 
 @app.get("/caracteristicas")
