@@ -16,7 +16,7 @@ app = FastAPI()
 BASE_DIR = os.getenv("BASE_DIR", "./app/caracteristicas")
 
 TRAÇOS = ["oral", "esquizoide", "psicopata", "masoquista", "rigido"]
-PARTES = ["olhos", "boca", "tronco", "quadril", "pernas"]
+PARTES = ["cabeça", "olhos", "boca", "tronco", "quadril", "pernas"]
 
 
 def carregar_caracteristicas():
@@ -109,6 +109,7 @@ A seguir estão as descrições de referência dos cinco traços de caráter:
 {CARACTERISTICAS_TEXTO}
 
 Com base na imagem de corpo inteiro enviada, avalie separadamente as seguintes partes do corpo:
+- Cabeça
 - Olhos
 - Boca
 - Tronco
@@ -144,8 +145,11 @@ Formato de resposta:
             max_tokens=2000
         )
 
-        raw = response.choices[0].message.content
-        cleaned_raw = re.sub(r"^```(?:json)?|```$", "", raw.strip(), flags=re.IGNORECASE).strip()
+        raw = response.choices[0].message.content or ""
+        if not raw.strip().startswith("{"):
+            raise ValueError("Resposta da OpenAI não está em formato JSON.\nResposta recebida:\n" + raw)
+
+        cleaned_raw = raw.strip().strip("`").strip()
         resultado = json.loads(cleaned_raw)
 
         for parte in PARTES:
