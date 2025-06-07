@@ -173,11 +173,13 @@ Formato de resposta:
         )
 
         raw = response.choices[0].message.content or ""
-        if not raw.strip().startswith("{"):
-            raise ValueError("Resposta da OpenAI não está em formato JSON.\nResposta recebida:\n" + raw)
+cleaned_raw = re.sub(r"^```(?:json)?\s*|```$", "", raw.strip(), flags=re.IGNORECASE).strip()
 
-        cleaned_raw = re.sub(r"^```(?:json)?\s*|```$", "", raw.strip(), flags=re.IGNORECASE).strip()
-        resultado = json.loads(cleaned_raw)
+try:
+    resultado = json.loads(cleaned_raw)
+except json.JSONDecodeError as e:
+    raise ValueError(f"Falha ao decodificar JSON. Resposta recebida:
+{cleaned_raw}")
 
         for parte in PARTES:
             bloco = resultado.get(parte)
