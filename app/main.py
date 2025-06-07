@@ -15,7 +15,7 @@ app = FastAPI()
 
 BASE_DIR = os.getenv("BASE_DIR", "./app/caracteristicas")
 
-TRAÇOS = ["esquizoide", "oral", "masoquista", "psicopata", "rigido"]
+TRAÇOS = ["esquizoide", "masoquista", "oral", "psicopata", "rigido"]
 PARTES = ["cabeça", "olhos", "boca", "tronco", "quadril", "pernas"]
 
 
@@ -116,8 +116,36 @@ Com base na imagem de corpo inteiro enviada, avalie separadamente as seguintes p
 - Quadril
 - Pernas
 
-Distribua exatamente 10 pontos entre os cinco traços para cada parte. Idealmente, distribua esses pontos entre todos os traços, sempre com base nas justificativas visuais descritas nos textos de referência. Evite atribuir zero a múltiplos traços, a menos que haja uma justificativa clara e coerente.
-Inclua uma explicação por traço em um objeto chamado 'explicacao'.
+Distribua exatamente 10 pontos entre os cinco traços para cada parte do corpo (olhos, boca, tronco, quadril e pernas).
+
+⚠️ IMPORTANTE: Sua resposta deve ser obrigatoriamente no formato JSON válido, com a seguinte estrutura:
+
+{
+  "olhos": {
+    "esquizoide": int,
+    "masoquista": int,
+    "oral": int,
+    "psicopata": int,
+    "rigido": int,
+    "explicacao": {
+      "esquizoide": "texto...",
+      "masoquista": "texto...",
+      "oral": "texto...",
+      "psicopata": "texto...",
+      "rigido": "texto..."
+    }
+  },
+  ...
+  "soma_total_por_traco": {
+    "esquizoide": int,
+    "masoquista": int,
+    "oral": int,
+    "psicopata": int,
+    "rigido": int
+  }
+}
+
+Não explique fora do JSON. Apenas retorne o objeto diretamente.
 
 Formato de resposta:
 {{
