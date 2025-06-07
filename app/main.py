@@ -173,13 +173,12 @@ Formato de resposta:
         )
 
         raw = response.choices[0].message.content or ""
-cleaned_raw = re.sub(r"^```(?:json)?\s*|```$", "", raw.strip(), flags=re.IGNORECASE).strip()
+        cleaned_raw = re.sub(r"^```(?:json)?\s*|```$", "", raw.strip(), flags=re.IGNORECASE).strip()
 
-try:
-    resultado = json.loads(cleaned_raw)
-except json.JSONDecodeError as e:
-    raise ValueError(f"Falha ao decodificar JSON. Resposta recebida:
-{cleaned_raw}")
+        try:
+            resultado = json.loads(cleaned_raw)
+        except json.JSONDecodeError:
+            raise ValueError(f"Falha ao decodificar JSON. Resposta recebida:\n{cleaned_raw}")
 
         for parte in PARTES:
             bloco = resultado.get(parte)
@@ -189,7 +188,6 @@ except json.JSONDecodeError as e:
                     raise ValueError(f"A soma dos traços em '{parte}' é {soma}, mas deveria ser 10.")
                 if all(bloco.get(traco, 0) == 0 for traco in TRAÇOS):
                     raise ValueError(f"A parte '{parte}' não possui distribuição significativa entre os traços. Distribua de forma coerente com os textos de referência.")
-                    raise ValueError(f"A soma dos traços em '{parte}' é {soma}, mas deveria ser 10.")
 
         mensagem = formatar_mensagem(resultado)
         return {"resultado": resultado, "mensagem": mensagem}
