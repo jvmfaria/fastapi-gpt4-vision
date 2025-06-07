@@ -159,6 +159,8 @@ Distribua exatamente 10 pontos entre os cinco traços para cada parte do corpo.
     "rigido": int
   }}
 }}
+
+Retorne apenas o JSON. Não inclua explicações fora dele.
 """
 
         response = client.chat.completions.create(
@@ -179,12 +181,16 @@ Distribua exatamente 10 pontos entre os cinco traços para cada parte do corpo.
         )
 
         raw = response.choices[0].message.content or ""
-        cleaned_raw = re.sub(r"^```(?:json)?\s*|```$", "", raw.strip(), flags=re.IGNORECASE).strip()
+
+        match = re.search(r"\{[\s\S]*\}", raw)
+        if not match:
+            raise ValueError(f"Falha ao localizar JSON na resposta:\n{raw}")
+        cleaned_raw = match.group(0)
 
         try:
             resultado = json.loads(cleaned_raw)
         except json.JSONDecodeError:
-            raise ValueError(f"Falha ao decodificar JSON. Resposta recebida:\n{cleaned_raw}")
+            raise ValueError(f"Falha ao decodificar JSON extraído:\n{cleaned_raw}")
 
         for parte in PARTES:
             bloco = resultado.get(parte)
@@ -224,12 +230,16 @@ async def gerar_relatorio(payload: dict):
     )
 
     raw = response.choices[0].message.content or ""
-    cleaned_raw = re.sub(r"^```(?:json)?\s*|```$", "", raw.strip(), flags=re.IGNORECASE).strip()
+
+    match = re.search(r"\{[\s\S]*\}", raw)
+    if not match:
+        raise HTTPException(status_code=500, detail=f"Falha ao localizar JSON na resposta:\n{raw}")
+    cleaned_raw = match.group(0)
 
     try:
         resultado_json = json.loads(cleaned_raw)
     except json.JSONDecodeError:
-        raise HTTPException(status_code=500, detail="Resposta da IA não pôde ser convertida em JSON.")
+        raise HTTPException(status_code=500, detail=f"Falha ao decodificar JSON extraído:\n{cleaned_raw}")
 
     return {"relatorio": resultado_json}
 
