@@ -176,7 +176,7 @@ Formato de resposta:
         if not raw.strip().startswith("{"):
             raise ValueError("Resposta da OpenAI não está em formato JSON.\nResposta recebida:\n" + raw)
 
-        cleaned_raw = raw.strip().strip("`").strip()
+        cleaned_raw = re.sub(r"^```(?:json)?\s*|```$", "", raw.strip(), flags=re.IGNORECASE).strip()
         resultado = json.loads(cleaned_raw)
 
         for parte in PARTES:
