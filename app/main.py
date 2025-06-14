@@ -17,7 +17,7 @@ app = FastAPI()
 BASE_DIR = os.getenv("BASE_DIR", "./app/caracteristicas")
 
 TRAÇOS = ["oral", "esquizoide", "psicopata", "masoquista", "rigido"]
-PARTES = ["olhos", "boca", "tronco", "quadril", "pernas"]
+PARTES = ["cabeca", "olhos", "boca", "tronco", "quadril", "pernas"]
 
 def carregar_caracteristicas():
     arquivos = {traco: f"{traco}.txt" for traco in TRAÇOS}
@@ -41,7 +41,7 @@ def file_to_data_url(file: UploadFile) -> str:
     return f"data:{file.content_type};base64,{encoded}"
 
 def formatar_mensagem(dados):
-    mensagem = ["📊 *Análise corporal completa por região*\n"]
+    mensagem = ["\ud83d\udcca *Análise corporal completa por região*\n"]
     for parte in PARTES:
         bloco = dados.get(parte)
         if isinstance(bloco, dict):
@@ -52,18 +52,18 @@ def formatar_mensagem(dados):
                 explicacao = bloco.get("explicacao", {})
                 justificativa = explicacao.get(traco, "")
                 mensagem.append(f"• {traco.capitalize()}: {ponto} — {justificativa}")
-    mensagem.append("\n🧠 *Total por traço*")
+    mensagem.append("\n\ud83e\udde0 *Total por traço*")
     for traco in TRAÇOS:
         total = dados.get("soma_total_por_traco", {}).get(traco, 0)
         mensagem.append(f"• {traco.capitalize()}: {total}")
-    mensagem.append("\n📌 *Metodologia*: Corphus!")
+    mensagem.append("\n\ud83d\udccc *Metodologia*: Corphus!")
     return "\n".join(mensagem)
 
 def gerar_prompt_relatorio(dados_classificacao, nome_cliente, data_atendimento):
     return f"""
 Você é a assistente Lia – Linguagem Integrativa de Autoconhecimento, da Corphus.
 
-Sua tarefa é gerar um relatório completo e humanizado de análise corporal, no formato JSON, com base no método "O Corpo Explica" e na psicologia reichiana.
+Sua tarefa é gerar um relatório completo e humanizado de análise corporal, no formato JSON, com base no método \"O Corpo Explica\" e na psicologia reichiana.
 
 ⚠️ Responda apenas com um objeto JSON estruturado com os seguintes campos:
 
@@ -100,9 +100,15 @@ Análise por parte:
 """
 
 @app.post("/classificar")
-async def classificar(imagem: UploadFile = File(...)):
+async def classificar(
+    imagem_frente: UploadFile = File(...),
+    imagem_lateral: UploadFile = File(...),
+    imagem_costas: UploadFile = File(...)
+):
     try:
-        image_data_url = file_to_data_url(imagem)
+        frente_data_url = file_to_data_url(imagem_frente)
+        lateral_data_url = file_to_data_url(imagem_lateral)
+        costas_data_url = file_to_data_url(imagem_costas)
 
         prompt_instrucoes = f"""
 Você é um analista reichiano especialista em linguagem corporal e no método O Corpo Explica.
@@ -111,19 +117,24 @@ Abaixo estão as descrições referenciais dos cinco traços de caráter:
 
 {CARACTERISTICAS_TEXTO}
 
-Sua tarefa é analisar a imagem corporal fornecida e, para cada parte do corpo (olhos, boca, tronco, quadril, pernas):
-- Distribuir exatamente 10 pontos entre os cinco traços
-- Incluir uma explicação curta para cada traço justificado
+Sua tarefa é analisar três imagens corporais (frente, lateral e costas) de uma mesma pessoa.
+
+Com base nessas imagens, avalie as seguintes partes do corpo: cabeça, olhos, boca, tronco, quadril e pernas.
+
+Para cada parte:
+- Distribua exatamente 10 pontos entre os cinco traços de caráter.
+- Forneça uma explicação curta e justificada para cada traço.
 
 Formato de resposta:
 ```json
 {{
-  "olhos": {{ "oral": int, ..., "explicacao": {{...}} }},
+  "cabeca": {{ "oral": int, ..., "explicacao": {{...}} }},
+  "olhos": {{ ... }},
   "boca": {{ ... }},
   "tronco": {{ ... }},
   "quadril": {{ ... }},
   "pernas": {{ ... }},
-  "soma_total_por_traco": {{ ... }}
+  "soma_total_por_traco": {{ "oral": int, ... }}
 }}
 ```
 Apenas o JSON. Nada mais.
@@ -135,21 +146,23 @@ Apenas o JSON. Nada mais.
                 {"role": "system", "content": "Você é um analista reichiano especialista em linguagem corporal."},
                 {"role": "user", "content": prompt_instrucoes},
                 {"role": "user", "content": [
-                    {"type": "text", "text": "Aqui está a imagem a ser analisada:"},
-                    {"type": "image_url", "image_url": {"url": image_data_url}}
+                    {"type": "text", "text": "Imagem de frente:"},
+                    {"type": "image_url", "image_url": {"url": frente_data_url}},
+                    {"type": "text", "text": "Imagem de lateral:"},
+                    {"type": "image_url", "image_url": {"url": lateral_data_url}},
+                    {"type": "text", "text": "Imagem de costas:"},
+                    {"type": "image_url", "image_url": {"url": costas_data_url}}
                 ]}
             ],
             temperature=0,
-            max_tokens=2000
+            max_tokens=2500
         )
 
         raw = response.choices[0].message.content or ""
         match = re.search(r"\{[\s\S]*\}", raw)
         if not match:
             raise ValueError(f"Falha ao localizar JSON na resposta:\n{raw}")
-        cleaned_raw = match.group(0)
-
-        resultado = json.loads(cleaned_raw)
+        resultado = json.loads(match.group(0))
 
         for parte in PARTES:
             bloco = resultado.get(parte)
