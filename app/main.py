@@ -41,7 +41,7 @@ def file_to_data_url(file: UploadFile) -> str:
     return f"data:{file.content_type};base64,{encoded}"
 
 def formatar_mensagem(dados):
-    mensagem = ["\ud83d\udcca *Análise corporal completa por região*\n"]
+    mensagem = ["*Análise corporal completa por região*\n"]
     for parte in PARTES:
         bloco = dados.get(parte)
         if isinstance(bloco, dict):
@@ -52,11 +52,11 @@ def formatar_mensagem(dados):
                 explicacao = bloco.get("explicacao", {})
                 justificativa = explicacao.get(traco, "")
                 mensagem.append(f"• {traco.capitalize()}: {ponto} — {justificativa}")
-    mensagem.append("\n\ud83e\udde0 *Total por traço*")
+    mensagem.append("*Total por traço*")
     for traco in TRAÇOS:
         total = dados.get("soma_total_por_traco", {}).get(traco, 0)
         mensagem.append(f"• {traco.capitalize()}: {total}")
-    mensagem.append("\n\ud83d\udccc *Metodologia*: Corphus!")
+    mensagem.append("*Metodologia*: corphus.ai")
     return "\n".join(mensagem)
 
 def gerar_prompt_relatorio(dados_classificacao, nome_cliente, data_atendimento):
@@ -65,7 +65,7 @@ Você é a assistente Lia – Linguagem Integrativa de Autoconhecimento, da Corp
 
 Sua tarefa é gerar um relatório completo e humanizado de análise corporal, no formato JSON, com base no método \"O Corpo Explica\" e na psicologia reichiana.
 
-⚠️ Responda apenas com um objeto JSON estruturado com os seguintes campos:
+Responda apenas com um objeto JSON estruturado com os seguintes campos:
 
 {{
   "cabecalho": {{
