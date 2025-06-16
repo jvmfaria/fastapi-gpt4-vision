@@ -41,7 +41,7 @@ def file_to_data_url(file: UploadFile) -> str:
     return f"data:{file.content_type};base64,{encoded}"
 
 def formatar_mensagem(dados):
-    mensagem = ["*Análise corporal completa por região*\n"]
+    mensagem = ["📊 *Análise corporal completa por região*\n"]
     for parte in PARTES:
         bloco = dados.get(parte)
         if isinstance(bloco, dict):
@@ -52,20 +52,20 @@ def formatar_mensagem(dados):
                 explicacao = bloco.get("explicacao", {})
                 justificativa = explicacao.get(traco, "")
                 mensagem.append(f"• {traco.capitalize()}: {ponto} — {justificativa}")
-    mensagem.append("*Total por traço*")
+    mensagem.append("\n🧠 *Total por traço*")
     for traco in TRAÇOS:
         total = dados.get("soma_total_por_traco", {}).get(traco, 0)
         mensagem.append(f"• {traco.capitalize()}: {total}")
-    mensagem.append("*Metodologia*: corphus.ai")
+    mensagem.append("\n📌 *Metodologia*: Corphus!")
     return "\n".join(mensagem)
 
 def gerar_prompt_relatorio(dados_classificacao, nome_cliente, data_atendimento):
     return f"""
 Você é a assistente Lia – Linguagem Integrativa de Autoconhecimento, da Corphus.
 
-Sua tarefa é gerar um relatório completo e humanizado de análise corporal, no formato JSON, com base no método \"O Corpo Explica\" e na psicologia reichiana.
+Sua tarefa é gerar um relatório completo e humanizado de análise corporal, no formato JSON, com base no método "O Corpo Explica" e na psicologia reichiana.
 
-Responda apenas com um objeto JSON estruturado com os seguintes campos:
+⚠️ Responda apenas com um objeto JSON estruturado com os seguintes campos:
 
 {{
   "cabecalho": {{
@@ -111,30 +111,29 @@ async def classificar(
         costas_data_url = file_to_data_url(imagem_costas)
 
         prompt_instrucoes = f"""
-Você é um analista reichiano especialista em linguagem corporal e no método O Corpo Explica.
+Você é um analista reichiano altamente experiente no método "O Corpo Explica".
 
-Abaixo estão as descrições referenciais dos cinco traços de caráter:
+Abaixo estão as descrições referenciais completas de cada traço de caráter, detalhadas por parte do corpo:
 
 {CARACTERISTICAS_TEXTO}
 
-Sua tarefa é analisar três imagens corporais (frente, lateral e costas) de uma mesma pessoa.
+Sua tarefa é analisar cuidadosamente as imagens corporais fornecidas (frente, lateral e costas) de uma mesma pessoa.
 
-Com base nessas imagens, avalie as seguintes partes do corpo: cabeça, olhos, boca, tronco, quadril e pernas.
+Para cada uma das seguintes partes do corpo: cabeça, olhos, boca, tronco, quadril e pernas:
+- Distribua exatamente 10 pontos entre os cinco traços de caráter (oral, esquizoide, psicopata, masoquista, rígido)
+- Para cada traço em cada parte, forneça uma justificativa clara e objetiva
+- Utilize os arquivos de referência como base para sua análise
 
-Para cada parte:
-- Distribua exatamente 10 pontos entre os cinco traços de caráter.
-- Forneça uma explicação curta e justificada para cada traço.
-
-Formato de resposta:
+A resposta deve conter apenas um JSON com o seguinte formato:
 ```json
 {{
-  "cabeca": {{ "oral": int, ..., "explicacao": {{...}} }},
+  "cabeca": {{ "oral": int, ..., "explicacao": {{"oral": "...", ...}} }},
   "olhos": {{ ... }},
   "boca": {{ ... }},
   "tronco": {{ ... }},
   "quadril": {{ ... }},
   "pernas": {{ ... }},
-  "soma_total_por_traco": {{ "oral": int, ... }}
+  "soma_total_por_traco": {{ "oral": int, "esquizoide": int, ... }}
 }}
 ```
 Apenas o JSON. Nada mais.
