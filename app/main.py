@@ -111,7 +111,7 @@ async def classificar(
         costas_data_url = file_to_data_url(imagem_costas)
 
         prompt_instrucoes = f"""
-Você é um analista reichiano altamente experiente no método "O Corpo Explica".
+Você é um analista reichiano altamente experiente no método \"O Corpo Explica\".
 
 Abaixo estão as descrições referenciais completas de cada traço de caráter, detalhadas por parte do corpo:
 
@@ -131,13 +131,13 @@ Para cada uma das seguintes partes do corpo: cabeça, olhos, boca, tronco, quadr
 A resposta deve conter apenas um JSON com o seguinte formato:
 ```json
 {
-  "cabeca": { "oral": int, ..., "explicacao": {"oral": "...", ...} },
+  "cabeca": { "oral": int, ..., "explicacao": {"oral": "...", "esquizoide": "...", "psicopata": "...", "masoquista": "...", "rigido": "..."} },
   "olhos": { ... },
   "boca": { ... },
   "tronco": { ... },
   "quadril": { ... },
   "pernas": { ... },
-  "soma_total_por_traco": { "oral": int, "esquizoide": int, ... }
+  "soma_total_por_traco": { "oral": int, "esquizoide": int, "psicopata": int, "masoquista": int, "rigido": int }
 }
 ```
 Apenas o JSON. Nada mais.
