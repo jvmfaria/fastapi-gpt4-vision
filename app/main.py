@@ -121,20 +121,24 @@ Sua tarefa é analisar cuidadosamente as imagens corporais fornecidas (frente, l
 
 Para cada uma das seguintes partes do corpo: cabeça, olhos, boca, tronco, quadril e pernas:
 - Distribua exatamente 10 pontos entre os cinco traços de caráter (oral, esquizoide, psicopata, masoquista, rígido)
-- Para cada traço em cada parte, forneça uma justificativa clara e objetiva
-- Utilize os arquivos de referência como base para sua análise
+- Para cada traço em cada parte, escreva uma justificativa sensível, rica e interpretativa, com 2 a 3 frases.
+- A explicação deve integrar:
+  - A forma física da parte do corpo observada
+  - O comportamento corporal característico do traço
+  - Uma leitura emocional e simbólica da expressão
+- Use linguagem acolhedora e humana, como se estivesse ajudando um analista a compreender profundamente aquela pessoa.
 
 A resposta deve conter apenas um JSON com o seguinte formato:
 ```json
-{{
-  "cabeca": {{ "oral": int, ..., "explicacao": {{"oral": "...", ...}} }},
-  "olhos": {{ ... }},
-  "boca": {{ ... }},
-  "tronco": {{ ... }},
-  "quadril": {{ ... }},
-  "pernas": {{ ... }},
-  "soma_total_por_traco": {{ "oral": int, "esquizoide": int, ... }}
-}}
+{
+  "cabeca": { "oral": int, ..., "explicacao": {"oral": "...", ...} },
+  "olhos": { ... },
+  "boca": { ... },
+  "tronco": { ... },
+  "quadril": { ... },
+  "pernas": { ... },
+  "soma_total_por_traco": { "oral": int, "esquizoide": int, ... }
+}
 ```
 Apenas o JSON. Nada mais.
 """
