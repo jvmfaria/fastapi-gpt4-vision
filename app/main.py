@@ -115,7 +115,7 @@ Você é um analista reichiano altamente experiente no método \"O Corpo Explica
 
 Abaixo estão as descrições referenciais completas de cada traço de caráter, detalhadas por parte do corpo:
 
-{caracteristicas}
+<<CARACTERISTICAS>>
 
 Sua tarefa é analisar cuidadosamente as imagens corporais fornecidas (frente, lateral e costas) de uma mesma pessoa.
 
@@ -160,7 +160,7 @@ A resposta deve conter apenas um JSON com o seguinte formato:
 }
 ```
 Apenas o JSON. Nada mais.
-""".format(caracteristicas=CARACTERISTICAS_TEXTO)
+""".replace("<<CARACTERISTICAS>>", CARACTERISTICAS_TEXTO)
 
         response = client.chat.completions.create(
             model="gpt-4-turbo",
