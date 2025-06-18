@@ -148,48 +148,44 @@ A resposta deve conter apenas um JSON com o seguinte formato:
         )
 
         raw = response.choices[0].message.content or ""
-        match = re.search(r"\{[\s\S]*\}", raw)
+        match = re.search(r"{[\s\S]*}", raw)
         if not match:
             raise ValueError(f"Falha ao localizar JSON na resposta:\n{raw}")
         resultado = json.loads(match.group(0))
 
         partes_faltando = []
-            erros_partes = []
+        erros_partes = []
 
-            for parte in PARTES:
-                bloco = resultado.get(parte)
-                if not bloco:
-                    partes_faltando.append(parte)
-                    continue
-                soma_tracos = sum(bloco.get(traco, 0) for traco in TRAÇOS)
-                if soma_tracos != 10:
-                    erros_partes.append(f"'{parte}' soma {soma_tracos} (esperado: 10)")
-                if "explicacao" not in bloco:
-                    erros_partes.append(f"'{parte}' está sem explicações.")
+        for parte in PARTES:
+            bloco = resultado.get(parte)
+            if not bloco:
+                partes_faltando.append(parte)
+                continue
+            soma_tracos = sum(bloco.get(traco, 0) for traco in TRAÇOS)
+            if soma_tracos != 10:
+                erros_partes.append(f"'{parte}' soma {soma_tracos} (esperado: 10)")
+            if "explicacao" not in bloco:
+                erros_partes.append(f"'{parte}' está sem explicações.")
 
-            # Se nenhuma parte foi processada corretamente, retorna erro
-            if len(partes_faltando) == len(PARTES):
-                return JSONResponse(
-                    status_code=500,
-                    content={"error": "Nenhuma das partes corporais foi retornada pelo modelo. Verifique a qualidade das imagens ou o prompt."}
-                )
-
-            mensagem = formatar_mensagem(resultado)
-
-            # Adiciona observações no final da mensagem
-            if partes_faltando or erros_partes:
-                mensagem += "\n\n⚠️ *Observações da análise:*"
-                for p in partes_faltando:
-                    mensagem += f"\n• Parte '{p}' ausente na resposta."
-                for erro in erros_partes:
-                    mensagem += f"\n• {erro}"
+        if len(partes_faltando) == len(PARTES):
+            return JSONResponse(
+                status_code=500,
+                content={"error": "Nenhuma das partes corporais foi retornada pelo modelo. Verifique a qualidade das imagens ou o prompt."}
+            )
 
         mensagem = formatar_mensagem(resultado)
+
+        if partes_faltando or erros_partes:
+            mensagem += "\n\n⚠️ *Observações da análise:*"
+            for p in partes_faltando:
+                mensagem += f"\n• Parte '{p}' ausente na resposta."
+            for erro in erros_partes:
+                mensagem += f"\n• {erro}"
         return {"resultado": resultado, "mensagem": mensagem}
 
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
-
+    
 @app.post("/gerar-relatorio")
 async def gerar_relatorio(payload: dict):
     nome_cliente = payload.get("nome_cliente", "Cliente")
