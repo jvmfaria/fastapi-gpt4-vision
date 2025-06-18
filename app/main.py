@@ -153,14 +153,36 @@ A resposta deve conter apenas um JSON com o seguinte formato:
             raise ValueError(f"Falha ao localizar JSON na resposta:\n{raw}")
         resultado = json.loads(match.group(0))
 
-        for parte in PARTES:
-            bloco = resultado.get(parte)
-            if not bloco:
-                raise ValueError(f"Parte '{parte}' ausente no resultado.")
-            if sum(bloco.get(traco, 0) for traco in TRAÇOS) != 10:
-                raise ValueError(f"Soma dos traços em '{parte}' deve ser 10.")
-            if "explicacao" not in bloco:
-                raise ValueError(f"Faltando explicação na parte '{parte}'.")
+        partes_faltando = []
+            erros_partes = []
+
+            for parte in PARTES:
+                bloco = resultado.get(parte)
+                if not bloco:
+                    partes_faltando.append(parte)
+                    continue
+                soma_tracos = sum(bloco.get(traco, 0) for traco in TRAÇOS)
+                if soma_tracos != 10:
+                    erros_partes.append(f"'{parte}' soma {soma_tracos} (esperado: 10)")
+                if "explicacao" not in bloco:
+                    erros_partes.append(f"'{parte}' está sem explicações.")
+
+            # Se nenhuma parte foi processada corretamente, retorna erro
+            if len(partes_faltando) == len(PARTES):
+                return JSONResponse(
+                    status_code=500,
+                    content={"error": "Nenhuma das partes corporais foi retornada pelo modelo. Verifique a qualidade das imagens ou o prompt."}
+                )
+
+            mensagem = formatar_mensagem(resultado)
+
+            # Adiciona observações no final da mensagem
+            if partes_faltando or erros_partes:
+                mensagem += "\n\n⚠️ *Observações da análise:*"
+                for p in partes_faltando:
+                    mensagem += f"\n• Parte '{p}' ausente na resposta."
+                for erro in erros_partes:
+                    mensagem += f"\n• {erro}"
 
         mensagem = formatar_mensagem(resultado)
         return {"resultado": resultado, "mensagem": mensagem}
