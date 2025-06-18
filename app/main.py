@@ -46,6 +46,7 @@ def formatar_mensagem(dados):
         bloco = dados.get(parte)
         if isinstance(bloco, dict):
             mensagem.append(f"\n*{parte.capitalize()}*")
+            explicacao_geral = ""
             for traco in TRAÇOS:
                 ponto = bloco.get(traco, 0)
                 explicacao = bloco.get("explicacao", {})
@@ -62,9 +63,9 @@ def gerar_prompt_relatorio(dados_classificacao, nome_cliente, data_atendimento):
     return f"""
 Você é a assistente Lia – Linguagem Integrativa de Autoconhecimento, da Corphus.
 
-Sua tarefa é gerar um relatório completo e humanizado de análise corporal, no formato JSON, com base no método \"O Corpo Explica\" e na psicologia reichiana.
+Sua tarefa é gerar um relatório completo e humanizado de análise corporal, no formato JSON, com base no método "O Corpo Explica" e na psicologia reichiana.
 
-🔹 Responda apenas com um objeto JSON estruturado com os seguintes campos:
+⚠️ Responda apenas com um objeto JSON estruturado com os seguintes campos:
 
 {{
   "cabecalho": {{
@@ -89,8 +90,10 @@ Sua tarefa é gerar um relatório completo e humanizado de análise corporal, no
   "conclusao": "..."
 }}
 
+Dados de entrada:
+
 Soma total por traço:
-{json.dumps(dados_classificacao.get("soma_total_por_traco", {}), indent=2)}
+{json.dumps(dados_classificacao["soma_total_por_traco"], indent=2)}
 
 Análise por parte:
 {json.dumps({parte: dados_classificacao.get(parte, {}).get("explicacao", {}) for parte in PARTES}, indent=2)}
@@ -126,7 +129,37 @@ Para cada uma das seguintes partes do corpo: cabeça, olhos, boca, tronco, quadr
 - Use linguagem acolhedora e humana, como se estivesse ajudando um analista a compreender profundamente aquela pessoa.
 
 A resposta deve conter apenas um JSON com o seguinte formato:
-<estrutura JSON omitida por brevidade>
+```json
+{
+  "cabeca": {
+    "oral": int,
+    "esquizoide": int,
+    "psicopata": int,
+    "masoquista": int,
+    "rigido": int,
+    "explicacao": {
+      "oral": "...",
+      "esquizoide": "...",
+      "psicopata": "...",
+      "masoquista": "...",
+      "rigido": "..."
+    }
+  },
+  "olhos": { ... },
+  "boca": { ... },
+  "tronco": { ... },
+  "quadril": { ... },
+  "pernas": { ... },
+  "soma_total_por_traco": {
+    "oral": int,
+    "esquizoide": int,
+    "psicopata": int,
+    "masoquista": int,
+    "rigido": int
+  }
+}
+```
+Apenas o JSON. Nada mais.
 """.replace("<<CARACTERISTICAS>>", CARACTERISTICAS_TEXTO)
 
         response = client.chat.completions.create(
@@ -143,49 +176,31 @@ A resposta deve conter apenas um JSON com o seguinte formato:
                     {"type": "image_url", "image_url": {"url": costas_data_url}}
                 ]}
             ],
-            temperature=0.0,
-            max_tokens=3000
+            temperature=0,
+            max_tokens=2500
         )
 
         raw = response.choices[0].message.content or ""
-        match = re.search(r"{[\s\S]*}", raw)
+        match = re.search(r"\{[\s\S]*\}", raw)
         if not match:
             raise ValueError(f"Falha ao localizar JSON na resposta:\n{raw}")
         resultado = json.loads(match.group(0))
 
-        partes_faltando = []
-        erros_partes = []
-
         for parte in PARTES:
             bloco = resultado.get(parte)
             if not bloco:
-                partes_faltando.append(parte)
-                continue
-            soma_tracos = sum(bloco.get(traco, 0) for traco in TRAÇOS)
-            if soma_tracos != 10:
-                erros_partes.append(f"'{parte}' soma {soma_tracos} (esperado: 10)")
+                raise ValueError(f"Parte '{parte}' ausente no resultado.")
+            if sum(bloco.get(traco, 0) for traco in TRAÇOS) != 10:
+                raise ValueError(f"Soma dos traços em '{parte}' deve ser 10.")
             if "explicacao" not in bloco:
-                erros_partes.append(f"'{parte}' está sem explicações.")
-
-        if len(partes_faltando) == len(PARTES):
-            return JSONResponse(
-                status_code=500,
-                content={"error": "Nenhuma das partes corporais foi retornada pelo modelo. Verifique a qualidade das imagens ou o prompt."}
-            )
+                raise ValueError(f"Faltando explicação na parte '{parte}'.")
 
         mensagem = formatar_mensagem(resultado)
-
-        if partes_faltando or erros_partes:
-            mensagem += "\n\n⚠️ *Observações da análise:*"
-            for p in partes_faltando:
-                mensagem += f"\n• Parte '{p}' ausente na resposta."
-            for erro in erros_partes:
-                mensagem += f"\n• {erro}"
         return {"resultado": resultado, "mensagem": mensagem}
 
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
-    
+
 @app.post("/gerar-relatorio")
 async def gerar_relatorio(payload: dict):
     nome_cliente = payload.get("nome_cliente", "Cliente")
