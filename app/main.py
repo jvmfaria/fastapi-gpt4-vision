@@ -16,7 +16,7 @@ app = FastAPI()
 
 BASE_DIR = os.getenv("BASE_DIR", "./app/caracteristicas")
 
-TRAÇOS = ["oral", "esquizoide", "psicopata", "masoquista", "rigido"]
+TRAÇOS = ["esquizoide", "masoquista", "oral", "psicopata", "rigido"]
 PARTES = ["cabeca", "olhos", "boca", "tronco", "quadril", "pernas"]
 
 def carregar_caracteristicas():
@@ -132,16 +132,16 @@ A resposta deve conter apenas um JSON com o seguinte formato:
 ```json
 {
   "cabeca": {
-    "oral": int,
     "esquizoide": int,
-    "psicopata": int,
     "masoquista": int,
+    "oral": int,
+    "psicopata": int,
     "rigido": int,
     "explicacao": {
-      "oral": "...",
       "esquizoide": "...",
-      "psicopata": "...",
       "masoquista": "...",
+      "oral": "...",
+      "psicopata": "...",
       "rigido": "..."
     }
   },
@@ -151,10 +151,10 @@ A resposta deve conter apenas um JSON com o seguinte formato:
   "quadril": { ... },
   "pernas": { ... },
   "soma_total_por_traco": {
-    "oral": int,
     "esquizoide": int,
-    "psicopata": int,
     "masoquista": int,
+    "oral": int,
+    "psicopata": int,
     "rigido": int
   }
 }
