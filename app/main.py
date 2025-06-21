@@ -63,7 +63,7 @@ def gerar_prompt_relatorio(dados_classificacao, nome_cliente, data_atendimento):
     return f"""
 Você é a assistente Lia – Linguagem Integrativa de Autoconhecimento, da Corphus.
 
-Sua tarefa é gerar um relatório completo e humanizado de análise corporal, no formato JSON, com base no método "O Corpo Explica" e na psicologia reichiana.
+Sua tarefa é gerar um relatório completo e humanizado de análise corporal, no formato JSON, com base na psicologia reichiana.
 
 ⚠️ Responda apenas com um objeto JSON estruturado com os seguintes campos:
 
