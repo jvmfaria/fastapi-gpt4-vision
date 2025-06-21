@@ -102,12 +102,12 @@ Análise por parte:
 @app.post("/classificar")
 async def classificar(
     imagem_frente: UploadFile = File(...),
-    imagem_lateral: UploadFile = File(...),
+    imagem_lado: UploadFile = File(...),
     imagem_costas: UploadFile = File(...)
 ):
     try:
         frente_data_url = file_to_data_url(imagem_frente)
-        lateral_data_url = file_to_data_url(imagem_lateral)
+        lateral_data_url = file_to_data_url(imagem_lado)
         costas_data_url = file_to_data_url(imagem_costas)
 
         prompt_instrucoes = """
