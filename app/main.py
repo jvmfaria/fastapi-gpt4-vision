@@ -52,11 +52,11 @@ def formatar_mensagem(dados):
                 explicacao = bloco.get("explicacao", {})
                 justificativa = explicacao.get(traco, "")
                 mensagem.append(f"• {traco.capitalize()}: {ponto} — {justificativa}")
-    mensagem.append("\n🧠 *Total por traço*")
+    mensagem.append("\n🧠 *Total por Traço*")
     for traco in TRAÇOS:
         total = dados.get("soma_total_por_traco", {}).get(traco, 0)
         mensagem.append(f"• {traco.capitalize()}: {total}")
-    mensagem.append("\n📌 *Metodologia*: Corphus!")
+    mensagem.append("\n📌 *Metodologia*: lia.ai!")
     return "\n".join(mensagem)
 
 def gerar_prompt_relatorio(dados_classificacao, nome_cliente, data_atendimento):
@@ -111,17 +111,17 @@ async def classificar(
         costas_data_url = file_to_data_url(imagem_costas)
 
         prompt_instrucoes = """
-Você é um analista reichiano altamente experiente no método \"O Corpo Explica\".
+Você é um analista reichiano altamente experiente.
 
 Abaixo estão as descrições referenciais completas de cada traço de caráter, detalhadas por parte do corpo:
 
 <<CARACTERISTICAS>>
 
-Sua tarefa é analisar cuidadosamente as imagens corporais fornecidas (frente, lateral e costas) de uma mesma pessoa.
+Sua tarefa é analisar cuidadosamente as imagens corporais fornecidas (frente, lado e costas) de uma mesma pessoa.
 
 Para cada uma das seguintes partes do corpo: cabeça, olhos, boca, tronco, quadril e pernas:
-- Distribua exatamente 10 pontos entre os cinco traços de caráter (oral, esquizoide, psicopata, masoquista, rígido)
-- Para cada traço em cada parte, escreva uma justificativa sensível, rica e interpretativa, com 2 a 3 frases.
+- Distribua exatamente 10 pontos entre os cinco traços de caráter (esquizoide, masoquista, oral, psicopata, rígido)
+- Para cada traço em cada parte, escreva uma justificativa sensível, rica e interpretativa, com 3 a 5 frases.
 - A explicação deve integrar:
   - A forma física da parte do corpo observada
   - O comportamento corporal característico do traço
@@ -165,7 +165,7 @@ Apenas o JSON. Nada mais.
         response = client.chat.completions.create(
             model="gpt-4-turbo",
             messages=[
-                {"role": "system", "content": "Você é um analista reichiano especialista em linguagem corporal."},
+                {"role": "system", "content": "Você é um analista reichiano altamente especialista em linguagem corporal."},
                 {"role": "user", "content": prompt_instrucoes},
                 {"role": "user", "content": [
                     {"type": "text", "text": "Imagem de frente:"},
