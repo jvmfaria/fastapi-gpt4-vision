@@ -15,6 +15,7 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 app = FastAPI()
 
 BASE_DIR = os.getenv("BASE_DIR", "./app/caracteristicas")
+FOTOS_BASE_URL = "https://raw.githubusercontent.com/jvmfaria/fastapi-gpt4-vision/main/app/fotos"
 
 TRAÇOS = ["esquizoide", "masoquista", "oral", "psicopata", "rigido"]
 PARTES = ["cabeca", "olhos", "boca", "tronco", "quadril", "pernas"]
@@ -133,15 +134,11 @@ Análise por parte:
 """
 
 @app.post("/classificar")
-async def classificar(
-    imagem_frente: UploadFile = File(...),
-    imagem_lado: UploadFile = File(...),
-    imagem_costas: UploadFile = File(...)
-):
+async def classificar():
     try:
-        frente_data_url = file_to_data_url(imagem_frente)
-        lateral_data_url = file_to_data_url(imagem_lado)
-        costas_data_url = file_to_data_url(imagem_costas)
+        frente_url = f"{FOTOS_BASE_URL}/imagem_frente.png"
+        lado_url = f"{FOTOS_BASE_URL}/imagem_lado.png"
+        costas_url = f"{FOTOS_BASE_URL}/imagem_costas.png"
 
         prompt_instrucoes = """
 Você é um analista reichiano altamente experiente.
@@ -205,11 +202,11 @@ Apenas o JSON. Nada mais.
                 {"role": "user", "content": prompt_instrucoes},
                 {"role": "user", "content": [
                     {"type": "text", "text": "Imagem de frente:"},
-                    {"type": "image_url", "image_url": {"url": frente_data_url}},
+                    {"type": "image_url", "image_url": {"url": frente_url}},
                     {"type": "text", "text": "Imagem de lateral:"},
-                    {"type": "image_url", "image_url": {"url": lateral_data_url}},
+                    {"type": "image_url", "image_url": {"url": lado_url}},
                     {"type": "text", "text": "Imagem de costas:"},
-                    {"type": "image_url", "image_url": {"url": costas_data_url}}
+                    {"type": "image_url", "image_url": {"url": costas_url}}
                 ]}
             ],
             temperature=0,
