@@ -59,6 +59,39 @@ def formatar_mensagem(dados):
     mensagem.append("\n📌 *Metodologia*: lia.ai!")
     return "\n".join(mensagem)
 
+def distribuições_iguais(dados):
+    distros = set()
+    for parte in PARTES:
+        bloco = dados.get(parte, {})
+        dist = tuple(bloco.get(traco, 0) for traco in TRAÇOS)
+        if dist in distros:
+            return True
+        distros.add(dist)
+    return False
+
+def normalizar_justificativas(dados):
+    for parte in PARTES:
+        bloco = dados.get(parte, {})
+        explicacoes = bloco.get("explicacao", {})
+        for traco, texto in explicacoes.items():
+            texto = texto.strip().capitalize()
+            if not texto.endswith("."):
+                texto += "."
+            explicacoes[traco] = texto
+    return dados
+
+def comparar_com_histórico(dados_atuais, historico):
+    comparacao = {}
+    for traco in TRAÇOS:
+        atual = dados_atuais.get("soma_total_por_traco", {}).get(traco, 0)
+        anterior = historico.get("soma_total_por_traco", {}).get(traco, 0)
+        comparacao[traco] = {
+            "anterior": anterior,
+            "atual": atual,
+            "diferenca": atual - anterior
+        }
+    return comparacao
+
 def gerar_prompt_relatorio(dados_classificacao, nome_cliente, data_atendimento):
     return f"""
 Você é a assistente Lia – Linguagem Integrativa de Autoconhecimento, da Corphus.
