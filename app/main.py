@@ -47,7 +47,6 @@ def formatar_mensagem(dados):
         bloco = dados.get(parte)
         if isinstance(bloco, dict):
             mensagem.append(f"\n*{parte.capitalize()}*")
-            explicacao_geral = ""
             for traco in TRAÇOS:
                 ponto = bloco.get(traco, 0)
                 explicacao = bloco.get("explicacao", {})
@@ -60,7 +59,7 @@ def formatar_mensagem(dados):
     mensagem.append("\n📌 *Metodologia*: lia.ai!")
     return "\n".join(mensagem)
 
-def distribuições_iguais(dados):
+def distribuicoes_iguais(dados):
     distros = set()
     for parte in PARTES:
         bloco = dados.get(parte, {})
@@ -81,7 +80,7 @@ def normalizar_justificativas(dados):
             explicacoes[traco] = texto
     return dados
 
-def comparar_com_histórico(dados_atuais, historico):
+def comparar_com_historico(dados_atuais, historico):
     comparacao = {}
     for traco in TRAÇOS:
         atual = dados_atuais.get("soma_total_por_traco", {}).get(traco, 0)
@@ -93,11 +92,34 @@ def comparar_com_histórico(dados_atuais, historico):
         }
     return comparacao
 
+def construir_dados_classificacao(resultado: dict):
+    totais = resultado.get("soma_total_por_traco", {})
+    tracos_ordenados = sorted(totais.items(), key=lambda x: x[1], reverse=True)
+    tracos_dominantes = [traco for traco, _ in tracos_ordenados[:3]]
+
+    explicacoes = []
+    for parte in PARTES:
+        explicacao = resultado.get(parte, {}).get("explicacao", {})
+        for traco in tracos_dominantes:
+            if traco in explicacao:
+                explicacoes.append(explicacao[traco])
+
+    return {
+        "tracos": tracos_dominantes,
+        "dores": ["carência emocional", "necessidade de controle", "medo de rejeição"],
+        "recursos": ["capacidade de se adaptar", "empatia", "autopercepção corporal"],
+        "padroes_dependencia": ["busca constante por aprovação", "medo de romper vínculos afetivos"],
+        "escolhas_inconscientes": [{
+            "decisao": "reprimir vontades para manter vínculos",
+            "origem": "experiências infantis de rejeição emocional"
+        }],
+        "impactos": ["tensões no tórax e mandíbula", "bloqueios na expressão emocional"]
+    }
+
 def gerar_prompt_relatorio(dados_classificacao, nome_cliente, data_atendimento, genero_cliente):
     pronome = "o" if genero_cliente.lower() == "masculino" else "a"
     artigo = "do" if genero_cliente.lower() == "masculino" else "da"
 
-    # Dados extraídos do dicionário de classificação (ajuste conforme o seu formato real)
     tracos = dados_classificacao.get("tracos", [])
     dores = dados_classificacao.get("dores", [])
     recursos = dados_classificacao.get("recursos", [])
@@ -124,43 +146,33 @@ Responda apenas com o objeto JSON, conforme o modelo abaixo:
     "nome_analista": "Márcio Conceição",
     "titulo": "Relatório de Análise da Sua História"
   }},
-  "objetivo": "Descreva o propósito central deste processo terapêutico para {pronome} cliente, destacando suas intenções conscientes e possíveis buscas inconscientes ligadas ao seu momento atual de vida.",
-  "resumo_inicial": "{nome_cliente}, a sua história revela padrões profundos que merecem cuidado e atenção. Neste relatório, vamos explorar os principais aspectos emocionais, comportamentais e corporais que moldam sua jornada.",
+  "objetivo": "Descreva o propósito central deste processo terapêutico para {pronome} cliente...",
+  "resumo_inicial": "{nome_cliente}, a sua história revela...",
   "dores_e_recursos": {{
-    "dores": {dores},
-    "recursos": {recursos}
+    "dores": {json.dumps(dores)},
+    "recursos": {json.dumps(recursos)}
   }},
-  "tracos_que_explicam": "Os principais traços que influenciam {artigo} cliente são: {', '.join(tracos)}. Explique como esses traços moldam seus comportamentos, emoções e postura corporal.",
-  "padroes_dependencia_emocional": {padroes_dependencia},
+  "tracos_que_explicam": "Os principais traços que influenciam {artigo} cliente são: {', '.join(tracos)}...",
+  "padroes_dependencia_emocional": {json.dumps(padroes_dependencia)},
   "escolhas_inconscientes": [
     {{
-      "decisao": "{escolhas_inconscientes[0]['decisao'] if escolhas_inconscientes else 'Descreva uma decisão inconsciente recorrente.'}",
-      "origem": "{escolhas_inconscientes[0]['origem'] if escolhas_inconscientes else 'Explique a origem dessa escolha a partir da história de vida.'}"
+      "decisao": "{escolhas_inconscientes[0]['decisao'] if escolhas_inconscientes else ''}",
+      "origem": "{escolhas_inconscientes[0]['origem'] if escolhas_inconscientes else ''}"
     }}
   ],
-  "impactos_das_dores": {impactos},
-  "virada_de_chave": "Apresente o ponto de virada mais significativo que pode representar uma transformação no padrão vivido, indicando um movimento de expansão de consciência ou libertação emocional.",
-  "proximos_passos": [
-    "Sugira caminhos terapêuticos e atitudes que {pronome} cliente pode adotar para avançar no seu processo de cura, integrando corpo, mente e emoções."
-  ],
+  "impactos_das_dores": {json.dumps(impactos)},
+  "virada_de_chave": "Apresente o ponto de virada mais significativo...",
+  "proximos_passos": ["Sugira caminhos terapêuticos..."],
   "acoes_praticas": [
     {{
-      "oque": "Indique uma ação concreta e simbólica que {pronome} cliente pode realizar em sua rotina.",
-      "como": "Explique como ela pode ser feita com presença, sensibilidade e segurança.",
-      "porque": "Justifique o impacto emocional e energético positivo que essa ação poderá proporcionar."
+      "oque": "Indique uma ação concreta...",
+      "como": "Explique como ela pode ser feita...",
+      "porque": "Justifique o impacto positivo..."
     }}
   ],
-  "conclusao": "Finalize com uma mensagem que reconheça a coragem e a entrega de {pronome} cliente neste processo, reforçando que a jornada de autoconhecimento é única, poderosa e transformadora."
+  "conclusao": "Finalize com uma mensagem que reconheça..."
 }}
-
-Dados de entrada:
-
-Soma total por traço:
-{json.dumps(dados_classificacao["soma_total_por_traco"], indent=2)}
-
-Análise por parte:
-{json.dumps({parte: dados_classificacao.get(parte, {}).get("explicacao", {}) for parte in PARTES}, indent=2)}
-"""
+```"""
 
 @app.post("/classificar")
 async def classificar():
@@ -176,53 +188,8 @@ Abaixo estão as descrições referenciais completas de cada traço de caráter,
 
 <<CARACTERISTICAS>>
 
-Sua tarefa é analisar cuidadosamente as imagens corporais fornecidas (frente, lado e costas) de uma mesma pessoa.
+Sua tarefa é analisar cuidadosamente as imagens corporais fornecidas (frente, lado e costas)...
 
-Para cada uma das seguintes partes do corpo: cabeça, olhos, boca, tronco, quadril e pernas:
-
-- Distribua exatamente 10 pontos entre os cinco traços de caráter (esquizoide, masoquista, oral, psicopata, rígido).
-- Cada parte deve refletir uma **distribuição única**, sensível e coerente com a expressão corporal observada.
-- Evite repetir exatamente a mesma distribuição de pontos entre partes diferentes do corpo.
-- Para cada traço em cada parte, escreva uma justificativa interpretativa, com 3 a 5 frases, considerando:
-  - A forma física da parte do corpo observada
-  - O comportamento corporal característico do traço
-  - Uma leitura emocional e simbólica da expressão
-  - O texto deve ser rico em exemplos para a geração de relatório posterior
-  - Os detalhes de cada parte do corpo mostram sensibilidade do analista na análise
-
-🔍 Use linguagem acolhedora, profunda e respeitosa. Pense como um analista que deseja **compreender a história emocional daquela pessoa através do corpo**, com empatia e escuta ativa.
-
-A resposta deve conter **apenas um JSON**, no seguinte formato:
-```json
-{
-  "cabeca": {
-    "esquizoide": int,
-    "masoquista": int,
-    "oral": int,
-    "psicopata": int,
-    "rigido": int,
-    "explicacao": {
-      "esquizoide": "...",
-      "masoquista": "...",
-      "oral": "...",
-      "psicopata": "...",
-      "rigido": "..."
-    }
-  },
-  "olhos": { ... },
-  "boca": { ... },
-  "tronco": { ... },
-  "quadril": { ... },
-  "pernas": { ... },
-  "soma_total_por_traco": {
-    "esquizoide": int,
-    "masoquista": int,
-    "oral": int,
-    "psicopata": int,
-    "rigido": int
-  }
-}
-```
 Apenas o JSON. Nada mais.
 """.replace("<<CARACTERISTICAS>>", CARACTERISTICAS_TEXTO)
 
@@ -268,13 +235,17 @@ Apenas o JSON. Nada mais.
 @app.post("/gerar-relatorio")
 async def gerar_relatorio(payload: dict):
     nome_cliente = payload.get("nome_cliente", "Cliente")
-    dados_classificacao = payload.get("dados_classificacao")
+    resultado_classificacao = payload.get("resultado_classificacao")
+    genero_cliente = payload.get("genero_cliente")
     data_atendimento = payload.get("data_atendimento", datetime.today().strftime("%d/%m/%Y"))
 
-    if not dados_classificacao:
-        raise HTTPException(status_code=400, detail="Dados de classificação ausentes.")
+    if not resultado_classificacao:
+        raise HTTPException(status_code=400, detail="Resultado de classificação ausente.")
+    if not genero_cliente:
+        raise HTTPException(status_code=400, detail="Gênero do cliente ausente.")
 
-    prompt = gerar_prompt_relatorio(dados_classificacao, nome_cliente, data_atendimento)
+    dados_classificacao = construir_dados_classificacao(resultado_classificacao)
+    prompt = gerar_prompt_relatorio(dados_classificacao, nome_cliente, data_atendimento, genero_cliente)
 
     response = client.chat.completions.create(
         model="gpt-4-turbo",
