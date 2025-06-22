@@ -8,10 +8,8 @@ from datetime import datetime
 from dotenv import load_dotenv
 from openai import OpenAI
 
-# Carrega variáveis do ambiente teste
+# Carrega variáveis do ambiente
 load_dotenv()
-
-print("API KEY:", os.getenv("OPENAI_API_KEY"))  # Remova depois do teste
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 app = FastAPI()
