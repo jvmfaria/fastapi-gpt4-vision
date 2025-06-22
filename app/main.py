@@ -158,6 +158,8 @@ Para cada uma das seguintes partes do corpo: cabeça, olhos, boca, tronco, quadr
   - A forma física da parte do corpo observada
   - O comportamento corporal característico do traço
   - Uma leitura emocional e simbólica da expressão
+  - O texto deve ser rico em exemplos para a geração de relatório posterior
+  - Os detalhes de cada parte do corpo mostram sensibilidade do analista na análise
 
 🔍 Use linguagem acolhedora, profunda e respeitosa. Pense como um analista que deseja **compreender a história emocional daquela pessoa através do corpo**, com empatia e escuta ativa.
 
