@@ -8,7 +8,7 @@ from datetime import datetime
 from dotenv import load_dotenv
 from openai import OpenAI
 
-# Carrega variáveis de ambiente
+# Carrega variáveis do ambiente
 load_dotenv()
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
