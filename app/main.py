@@ -120,15 +120,18 @@ Abaixo estão as descrições referenciais completas de cada traço de caráter,
 Sua tarefa é analisar cuidadosamente as imagens corporais fornecidas (frente, lado e costas) de uma mesma pessoa.
 
 Para cada uma das seguintes partes do corpo: cabeça, olhos, boca, tronco, quadril e pernas:
-- Distribua exatamente 10 pontos entre os cinco traços de caráter (esquizoide, masoquista, oral, psicopata, rígido)
-- Para cada traço em cada parte, escreva uma justificativa sensível, rica e interpretativa, com 3 a 5 frases.
-- A explicação deve integrar:
+
+- Distribua exatamente 10 pontos entre os cinco traços de caráter (esquizoide, masoquista, oral, psicopata, rígido).
+- Cada parte deve refletir uma **distribuição única**, sensível e coerente com a expressão corporal observada.
+- Evite repetir exatamente a mesma distribuição de pontos entre partes diferentes do corpo.
+- Para cada traço em cada parte, escreva uma justificativa interpretativa, com 3 a 5 frases, considerando:
   - A forma física da parte do corpo observada
   - O comportamento corporal característico do traço
   - Uma leitura emocional e simbólica da expressão
-- Use linguagem acolhedora e humana, como se estivesse ajudando um analista a compreender profundamente aquela pessoa.
 
-A resposta deve conter apenas um JSON com o seguinte formato:
+🔍 Use linguagem acolhedora, profunda e respeitosa. Pense como um analista que deseja **compreender a história emocional daquela pessoa através do corpo**, com empatia e escuta ativa.
+
+A resposta deve conter **apenas um JSON**, no seguinte formato:
 ```json
 {
   "cabeca": {
