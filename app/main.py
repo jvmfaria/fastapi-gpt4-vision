@@ -11,6 +11,8 @@ from openai import OpenAI
 # Carrega variáveis do ambiente teste
 load_dotenv()
 
+print("API KEY:", os.getenv("OPENAI_API_KEY"))  # Remova depois do teste
+
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 app = FastAPI()
 
