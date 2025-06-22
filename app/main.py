@@ -188,9 +188,54 @@ Abaixo estão as descrições referenciais completas de cada traço de caráter,
 
 <<CARACTERISTICAS>>
 
-Sua tarefa é analisar cuidadosamente as imagens corporais fornecidas (frente, lado e costas)...
+Sua tarefa é analisar cuidadosamente as imagens corporais fornecidas (frente, lado e costas) de uma única pessoa.
 
-Apenas o JSON. Nada mais.
+Para cada uma das seguintes partes do corpo: cabeça, olhos, boca, tronco, quadril e pernas:
+
+- Distribua exatamente 10 pontos entre os cinco traços de caráter (esquizoide, masoquista, oral, psicopata, rígido).
+- Cada parte deve refletir uma **distribuição única**, sensível e coerente com a expressão corporal observada.
+- Evite repetir exatamente a mesma distribuição de pontos entre partes diferentes do corpo.
+- Para cada traço em cada parte, escreva uma justificativa interpretativa, com 3 a 5 frases, considerando:
+  - A forma física da parte do corpo observada.
+  - O comportamento corporal característico do traço.
+  - Uma leitura emocional e simbólica da expressão.
+  - O texto deve ser rico em exemplos para a geração de relatório posterior.
+  - Os detalhes de cada parte do corpo mostram sensibilidade do analista na análise.
+
+Use linguagem acolhedora, profunda e respeitosa. Pense como um analista que deseja **compreender a história emocional daquela pessoa através do corpo**, com empatia e escuta ativa.
+
+⚠️ Responda **somente com o JSON abaixo**, sem introduções, conclusões ou comentários fora do JSON.
+
+Formato obrigatório da resposta:
+```json
+{
+  "cabeca": {
+    "esquizoide": 0,
+    "masoquista": 0,
+    "oral": 0,
+    "psicopata": 0,
+    "rigido": 0,
+    "explicacao": {
+      "esquizoide": "...",
+      "masoquista": "...",
+      "oral": "...",
+      "psicopata": "...",
+      "rigido": "..."
+    }
+  },
+  "olhos": { ... },
+  "boca": { ... },
+  "tronco": { ... },
+  "quadril": { ... },
+  "pernas": { ... },
+  "soma_total_por_traco": {
+    "esquizoide": 0,
+    "masoquista": 0,
+    "oral": 0,
+    "psicopata": 0,
+    "rigido": 0
+  }
+}
 """.replace("<<CARACTERISTICAS>>", CARACTERISTICAS_TEXTO)
 
         response = client.chat.completions.create(
