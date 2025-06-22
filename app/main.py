@@ -93,14 +93,30 @@ def comparar_com_histórico(dados_atuais, historico):
         }
     return comparacao
 
-def gerar_prompt_relatorio(dados_classificacao, nome_cliente, data_atendimento):
+def gerar_prompt_relatorio(dados_classificacao, nome_cliente, data_atendimento, genero_cliente):
+    pronome = "o" if genero_cliente.lower() == "masculino" else "a"
+    artigo = "do" if genero_cliente.lower() == "masculino" else "da"
+
+    # Dados extraídos do dicionário de classificação (ajuste conforme o seu formato real)
+    tracos = dados_classificacao.get("tracos", [])
+    dores = dados_classificacao.get("dores", [])
+    recursos = dados_classificacao.get("recursos", [])
+    padroes_dependencia = dados_classificacao.get("padroes_dependencia", [])
+    escolhas_inconscientes = dados_classificacao.get("escolhas_inconscientes", [])
+    impactos = dados_classificacao.get("impactos", [])
+
     return f"""
 Você é a assistente Lia – Linguagem Integrativa de Autoconhecimento, da Corphus.
 
-Sua tarefa é gerar um relatório completo e humanizado de análise corporal, no formato JSON, com base na psicologia reichiana.
+Sua tarefa é gerar um relatório completo, humanizado e terapêutico de análise corporal no formato JSON, com base na psicologia reichiana, bioenergética e leitura corporal.
 
-⚠️ Responda apenas com um objeto JSON estruturado com os seguintes campos:
+⚠️ O resultado deve ser um objeto JSON estruturado com os seguintes campos, todos preenchidos com profundidade, empatia e linguagem acolhedora. 
 
+Considere o histórico emocional, padrões inconscientes e a estrutura corporal de {nome_cliente}, respeitando sua trajetória única. Adapte a linguagem de acordo com o gênero: utilize formas no feminino se for mulher e no masculino se for homem.
+
+Responda apenas com o objeto JSON, conforme o modelo abaixo:
+
+```json
 {{
   "cabecalho": {{
     "nome_cliente": "{nome_cliente}",
@@ -108,20 +124,33 @@ Sua tarefa é gerar um relatório completo e humanizado de análise corporal, no
     "nome_analista": "Márcio Conceição",
     "titulo": "Relatório de Análise da Sua História"
   }},
-  "objetivo": "...",
-  "resumo_inicial": "{nome_cliente}, a sua história revela...",
+  "objetivo": "Descreva o propósito central deste processo terapêutico para {pronome} cliente, destacando suas intenções conscientes e possíveis buscas inconscientes ligadas ao seu momento atual de vida.",
+  "resumo_inicial": "{nome_cliente}, a sua história revela padrões profundos que merecem cuidado e atenção. Neste relatório, vamos explorar os principais aspectos emocionais, comportamentais e corporais que moldam sua jornada.",
   "dores_e_recursos": {{
-    "dores": ["..."],
-    "recursos": ["..."]
+    "dores": {dores},
+    "recursos": {recursos}
   }},
-  "tracos_que_explicam": "...",
-  "padroes_dependencia_emocional": ["..."],
-  "escolhas_inconscientes": [{{"decisao": "...", "origem": "..."}}],
-  "impactos_das_dores": ["..."],
-  "virada_de_chave": "...",
-  "proximos_passos": ["..."],
-  "acoes_praticas": [{{"oque": "...", "como": "...", "porque": "..."}}],
-  "conclusao": "..."
+  "tracos_que_explicam": "Os principais traços que influenciam {artigo} cliente são: {', '.join(tracos)}. Explique como esses traços moldam seus comportamentos, emoções e postura corporal.",
+  "padroes_dependencia_emocional": {padroes_dependencia},
+  "escolhas_inconscientes": [
+    {{
+      "decisao": "{escolhas_inconscientes[0]['decisao'] if escolhas_inconscientes else 'Descreva uma decisão inconsciente recorrente.'}",
+      "origem": "{escolhas_inconscientes[0]['origem'] if escolhas_inconscientes else 'Explique a origem dessa escolha a partir da história de vida.'}"
+    }}
+  ],
+  "impactos_das_dores": {impactos},
+  "virada_de_chave": "Apresente o ponto de virada mais significativo que pode representar uma transformação no padrão vivido, indicando um movimento de expansão de consciência ou libertação emocional.",
+  "proximos_passos": [
+    "Sugira caminhos terapêuticos e atitudes que {pronome} cliente pode adotar para avançar no seu processo de cura, integrando corpo, mente e emoções."
+  ],
+  "acoes_praticas": [
+    {{
+      "oque": "Indique uma ação concreta e simbólica que {pronome} cliente pode realizar em sua rotina.",
+      "como": "Explique como ela pode ser feita com presença, sensibilidade e segurança.",
+      "porque": "Justifique o impacto emocional e energético positivo que essa ação poderá proporcionar."
+    }}
+  ],
+  "conclusao": "Finalize com uma mensagem que reconheça a coragem e a entrega de {pronome} cliente neste processo, reforçando que a jornada de autoconhecimento é única, poderosa e transformadora."
 }}
 
 Dados de entrada:
